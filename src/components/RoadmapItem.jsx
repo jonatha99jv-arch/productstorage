@@ -1,0 +1,120 @@
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Edit, Trash2, Clock, Target } from 'lucide-react'
+
+const RoadmapItem = ({ item, okrs, onEdit, onDelete }) => {
+  const [isDragging, setIsDragging] = useState(false)
+
+  // Encontrar o OKR vinculado
+  const linkedOKR = okrs.find(okr => okr.id === item.okrId)
+
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('text/plain', item.id)
+    setIsDragging(true)
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  const handleDelete = (e) => {
+    e.stopPropagation()
+    if (window.confirm('Tem certeza que deseja excluir este item?')) {
+      onDelete(item.id)
+    }
+  }
+
+  const handleEdit = (e) => {
+    e.stopPropagation()
+    onEdit(item)
+  }
+
+  return (
+    <Card
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={`
+        cursor-move hover:shadow-md transition-all duration-200
+        ${isDragging ? 'opacity-50 rotate-2' : ''}
+      `}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <h4 className="font-semibold text-sm text-gray-800 line-clamp-2">
+            {item.nome}
+          </h4>
+          <div className="flex space-x-1 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              className="h-6 w-6 p-0 hover:bg-blue-100"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              className="h-6 w-6 p-0 hover:bg-red-100"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-0 space-y-3">
+        {/* Métrica Input/Output */}
+        <div className="text-xs text-gray-600">
+          <div className="flex items-center space-x-1 mb-1">
+            <Target className="h-3 w-3" />
+            <span className="font-medium">Métrica:</span>
+          </div>
+          <p className="line-clamp-2">{item.inputOutputMetric}</p>
+        </div>
+
+        {/* Tese de Produto */}
+        <div className="text-xs text-gray-600">
+          <p className="line-clamp-3">{item.teseProduto}</p>
+        </div>
+
+        {/* Duração */}
+        {item.duracaoMeses && (
+          <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <Clock className="h-3 w-3" />
+            <span>{item.duracaoMeses} {item.duracaoMeses === 1 ? 'mês' : 'meses'}</span>
+          </div>
+        )}
+
+        {/* OKR Vinculado */}
+        {linkedOKR && (
+          <Badge variant="secondary" className="text-xs">
+            OKR: {linkedOKR.objetivo}
+          </Badge>
+        )}
+
+        {/* Subitens */}
+        {item.subitens && item.subitens.length > 0 && (
+          <div className="text-xs">
+            <div className="font-medium text-gray-700 mb-1">Subitens:</div>
+            <ul className="list-disc list-inside space-y-1 text-gray-600">
+              {item.subitens.slice(0, 2).map((subitem, index) => (
+                <li key={index} className="line-clamp-1">{subitem}</li>
+              ))}
+              {item.subitens.length > 2 && (
+                <li className="text-gray-400">+{item.subitens.length - 2} mais...</li>
+              )}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export default RoadmapItem
+

@@ -1,0 +1,361 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Cores da empresa */
+  --company-dark-blue: #221c35;
+  --company-orange: #ff9015;
+  --company-red-orange: #ff5100;
+  --company-pink: #e81f76;
+  
+  /* Status colors baseados na planilha original */
+  --status-not-started: #ff6b6b;
+  --status-next-sprint: #ff9f43;
+  --status-current-sprint: #ffc048;
+  --status-finalizing: #a8e6cf;
+  --status-completed: #26d0ce;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Estilos customizados para a planilha */
+.roadmap-table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.roadmap-table th,
+.roadmap-table td {
+  border: 1px solid #e2e8f0;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.roadmap-table th {
+  background-color: var(--company-dark-blue);
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Cabeçalhos mesclados */
+.roadmap-table .merged-header {
+  background-color: var(--company-dark-blue);
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.roadmap-table .item-cell {
+  min-width: 200px;
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+.roadmap-table .quarter-header {
+  background-color: var(--company-dark-blue);
+  color: white;
+  text-align: center;
+  font-weight: bold;
+}
+
+.roadmap-table .month-header {
+  background-color: #f8fafc;
+  color: var(--company-dark-blue);
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: 80px;
+}
+
+.roadmap-table .month-cell {
+  width: 80px;
+  height: 60px;
+  padding: 4px;
+  position: relative;
+}
+
+/* Status visual - quadrados coloridos sem texto */
+.status-visual {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.status-visual:hover {
+  opacity: 0.8;
+}
+
+/* Status colors */
+.status-nao-iniciado {
+  background-color: var(--status-not-started);
+}
+
+.status-proxima-sprint {
+  background-color: var(--status-next-sprint);
+}
+
+.status-sprint-atual {
+  background-color: var(--status-current-sprint);
+}
+
+.status-em-finalizacao {
+  background-color: var(--status-finalizing);
+}
+
+.status-concluida {
+  background-color: var(--status-completed);
+}
+
+/* Barra de progresso estilo Jira */
+.duration-progress {
+  width: 100%;
+  height: 20px;
+  background-color: #f3f4f6;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 4px;
+}
+
+.duration-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--company-orange) 0%, var(--company-red-orange) 100%);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.duration-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: #374151;
+  z-index: 2;
+}
+
+/* Progress bar styles */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--company-orange);
+  transition: width 0.3s ease;
+}
+
+/* Company color utilities */
+.bg-company-dark-blue {
+  background-color: var(--company-dark-blue);
+}
+
+.bg-company-orange {
+  background-color: var(--company-orange);
+}
+
+.bg-company-red-orange {
+  background-color: var(--company-red-orange);
+}
+
+.bg-company-pink {
+  background-color: var(--company-pink);
+}
+
+.text-company-dark-blue {
+  color: var(--company-dark-blue);
+}
+
+.text-company-orange {
+  color: var(--company-orange);
+}
+
+.border-company-orange {
+  border-color: var(--company-orange);
+}
+
+/* Tabs styling */
+.product-tabs {
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.product-tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.product-tab:hover {
+  color: var(--company-orange);
+}
+
+.product-tab.active {
+  color: var(--company-orange);
+  border-bottom-color: var(--company-orange);
+}
+
+.sub-product-tabs {
+  margin-bottom: 16px;
+}
+
+.sub-product-tab {
+  padding: 8px 16px;
+  margin-right: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-product-tab:hover {
+  background: #f1f5f9;
+  border-color: var(--company-orange);
+}
+
+.sub-product-tab.active {
+  background: var(--company-orange);
+  color: white;
+  border-color: var(--company-orange);
+}
+

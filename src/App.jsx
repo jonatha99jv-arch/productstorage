@@ -1,16 +1,33 @@
 import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabaseClient'
+import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
-import { Plus, Settings, BarChart3 } from 'lucide-react'
+import { Plus, Settings, BarChart3, RefreshCw } from 'lucide-react'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
 import OKRManager from './components/OKRManager'
 import OKRProgress from './components/OKRProgress'
 import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
+import DatabaseSetup from './components/DatabaseSetup'
 import './App.css'
 
 function App() {
-  const [roadmapItems, setRoadmapItems] = useState([])
-  const [okrs, setOkrs] = useState([])
+  const [showDatabaseSetup, setShowDatabaseSetup] = useState(false)
+  const [databaseReady, setDatabaseReady] = useState(false)
+  
+  const {
+    roadmapItems,
+    okrs,
+    loading,
+    error,
+    saveRoadmapItem,
+    deleteRoadmapItem,
+    updateRoadmapItemStatus,
+    saveOKR,
+    deleteOKR,
+    reloadData
+  } = useSupabaseData()
+
   const [showOKRManager, setShowOKRManager] = useState(false)
   const [showOKRProgress, setShowOKRProgress] = useState(false)
   const [showItemModal, setShowItemModal] = useState(false)
@@ -18,28 +35,51 @@ function App() {
   const [currentProduct, setCurrentProduct] = useState('aplicativo')
   const [currentSubProduct, setCurrentSubProduct] = useState('')
 
-  // Carregar dados do localStorage na inicialização
+  // Verificar se o banco de dados está configurado
   useEffect(() => {
-    const savedItems = localStorage.getItem('roadmapItems')
-    const savedOKRs = localStorage.getItem('okrs')
-    
-    if (savedItems) {
-      setRoadmapItems(JSON.parse(savedItems))
-    }
-    
-    if (savedOKRs) {
-      setOkrs(JSON.parse(savedOKRs))
-    }
+    checkDatabaseSetup()
   }, [])
 
-  // Salvar dados no localStorage sempre que houver mudanças
-  useEffect(() => {
-    localStorage.setItem('roadmapItems', JSON.stringify(roadmapItems))
-  }, [roadmapItems])
+  const checkDatabaseSetup = async () => {
+    try {
+      // Tentar fazer uma consulta simples para verificar se as tabelas existem
+      const { error: okrError } = await supabase
+        .from('okrs')
+        .select('id')
+        .limit(1)
 
-  useEffect(() => {
-    localStorage.setItem('okrs', JSON.stringify(okrs))
-  }, [okrs])
+      const { error: roadmapError } = await supabase
+        .from('roadmap_items')
+        .select('id')
+        .limit(1)
+
+      if (okrError || roadmapError) {
+        // Se houver erro, provavelmente as tabelas não existem
+        if ((okrError && okrError.code === '42P01') || (roadmapError && roadmapError.code === '42P01')) {
+          setShowDatabaseSetup(true)
+        } else {
+          // Outros erros, assumir que o banco está configurado
+          setDatabaseReady(true)
+        }
+      } else {
+        // Sem erros, banco está configurado
+        setDatabaseReady(true)
+      }
+    } catch (error) {
+      console.error('Erro ao verificar configuração do banco:', error)
+      setShowDatabaseSetup(true)
+    }
+  }
+
+  const handleDatabaseSetupComplete = () => {
+    setShowDatabaseSetup(false)
+    setDatabaseReady(true)
+  }
+
+  // Se precisar configurar o banco, mostrar tela de configuração
+  if (showDatabaseSetup) {
+    return <DatabaseSetup onSetupComplete={handleDatabaseSetupComplete} />
+  }
 
   const handleAddItem = () => {
     setEditingItem(null)
@@ -51,64 +91,26 @@ function App() {
     setShowItemModal(true)
   }
 
-  const handleSaveItem = (itemData) => {
-    if (editingItem) {
-      // Editar item existente
-      setRoadmapItems(items => 
-        items.map(item => 
-          item.id === editingItem.id ? { ...itemData, id: editingItem.id } : item
-        )
-      )
-    } else {
-      // Adicionar novo item
-      const newItem = {
-        ...itemData,
-        id: Date.now().toString() // ID simples baseado em timestamp
-      }
-      setRoadmapItems(items => [...items, newItem])
-    }
+  const handleSaveItem = async (itemData) => {
+    await saveRoadmapItem(itemData)
     setShowItemModal(false)
     setEditingItem(null)
   }
 
-  const handleDeleteItem = (itemId) => {
-    setRoadmapItems(items => items.filter(item => item.id !== itemId))
+  const handleDeleteItem = async (itemId) => {
+    await deleteRoadmapItem(itemId)
   }
 
-  const handleUpdateItemStatus = (itemId, newStatus) => {
-    setRoadmapItems(items =>
-      items.map(item =>
-        item.id === itemId ? { ...item, status: newStatus } : item
-      )
-    )
+  const handleUpdateItemStatus = async (itemId, newStatus) => {
+    await updateRoadmapItemStatus(itemId, newStatus)
   }
 
-  const handleSaveOKR = (okrData) => {
-    if (okrData.id) {
-      // Editar OKR existente
-      setOkrs(okrs => 
-        okrs.map(okr => 
-          okr.id === okrData.id ? okrData : okr
-        )
-      )
-    } else {
-      // Adicionar novo OKR
-      const newOKR = {
-        ...okrData,
-        id: Date.now().toString()
-      }
-      setOkrs(okrs => [...okrs, newOKR])
-    }
+  const handleSaveOKR = async (okrData) => {
+    await saveOKR(okrData)
   }
 
-  const handleDeleteOKR = (okrId) => {
-    setOkrs(okrs => okrs.filter(okr => okr.id !== okrId))
-    // Remover vinculação dos itens do roadmap
-    setRoadmapItems(items =>
-      items.map(item =>
-        item.okrId === okrId ? { ...item, okrId: null } : item
-      )
-    )
+  const handleDeleteOKR = async (okrId) => {
+    await deleteOKR(okrId)
   }
 
   const handleProductChange = (productId) => {
@@ -163,6 +165,20 @@ function App() {
               Roadmap Interativo - {getPageTitle()}
             </h1>
             <div className="flex space-x-3">
+              {error && (
+                <div className="text-red-300 text-sm bg-red-600 px-3 py-1 rounded">
+                  Erro: {error}
+                </div>
+              )}
+              <Button
+                onClick={reloadData}
+                variant="outline"
+                className="flex items-center space-x-2 bg-white text-company-dark-blue border-white hover:bg-gray-100"
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Atualizar</span>
+              </Button>
               <Button
                 onClick={() => setShowOKRProgress(true)}
                 variant="outline"
@@ -193,24 +209,37 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Abas de Produtos */}
-        <ProductTabs
-          currentProduct={currentProduct}
-          currentSubProduct={currentSubProduct}
-          onProductChange={handleProductChange}
-          onSubProductChange={handleSubProductChange}
-        />
+        {loading && (
+          <div className="flex justify-center items-center py-8">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="h-5 w-5 animate-spin text-company-dark-blue" />
+              <span className="text-company-dark-blue">Carregando dados...</span>
+            </div>
+          </div>
+        )}
+        
+        {!loading && (
+          <>
+            {/* Abas de Produtos */}
+            <ProductTabs
+              currentProduct={currentProduct}
+              currentSubProduct={currentSubProduct}
+              onProductChange={handleProductChange}
+              onSubProductChange={handleSubProductChange}
+            />
 
-        {/* Tabela do Roadmap */}
-        <RoadmapTableImproved
-          items={getFilteredItems()}
-          okrs={okrs}
-          onEditItem={handleEditItem}
-          onDeleteItem={handleDeleteItem}
-          onUpdateItemStatus={handleUpdateItemStatus}
-          currentProduct={currentProduct}
-          currentSubProduct={currentSubProduct}
-        />
+            {/* Tabela do Roadmap */}
+            <RoadmapTableImproved
+              items={getFilteredItems()}
+              okrs={okrs}
+              onEditItem={handleEditItem}
+              onDeleteItem={handleDeleteItem}
+              onUpdateItemStatus={handleUpdateItemStatus}
+              currentProduct={currentProduct}
+              currentSubProduct={currentSubProduct}
+            />
+          </>
+        )}
       </main>
 
       {/* Modals */}

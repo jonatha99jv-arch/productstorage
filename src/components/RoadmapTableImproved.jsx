@@ -48,13 +48,12 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     if (!item.dataInicio || !item.duracaoMeses) return false
     
     const startDate = new Date(item.dataInicio)
-    const endDate = new Date(startDate)
-    endDate.setMonth(endDate.getMonth() + parseInt(item.duracaoMeses))
-    
-    const checkDate = new Date(year, month - 1, 1) // month é 1-based
-    const checkEndDate = new Date(year, month, 0) // último dia do mês
-    
-    return startDate <= checkEndDate && endDate >= checkDate
+    const itemEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + parseInt(item.duracaoMeses), 0) // Last day of the item's end month
+
+    const checkMonthStartDate = new Date(year, month - 1, 1) // First day of the month being checked
+    const checkMonthEndDate = new Date(year, month, 0) // Last day of the month being checked
+
+    return startDate <= checkMonthEndDate && itemEndDate >= checkMonthStartDate
   }
 
   // Função para verificar se um item deve ser exibido no trimestre atual

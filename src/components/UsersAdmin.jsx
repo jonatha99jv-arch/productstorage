@@ -62,7 +62,7 @@ const UsersAdmin = () => {
       <h2 className="text-lg font-semibold mb-3">Gerenciar Usuários</h2>
       {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
       <div className="flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center">
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <Dialog open={createOpen} onOpenChange={(open)=>{ setCreateOpen(open); if (open) setForm({ email:'', password:'', role:'viewer'}) }}> 
           <DialogTrigger asChild>
             <Button className="bg-company-orange text-white">Criar Usuário</Button>
           </DialogTrigger>
@@ -73,11 +73,11 @@ const UsersAdmin = () => {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm mb-1">Email</label>
-                <input className="w-full border rounded px-2 py-1" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} type="email" placeholder="email@dominio.com" />
+                <input className="w-full border rounded px-2 py-1" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} type="email" placeholder="email@dominio.com" autoComplete="off" />
               </div>
               <div>
                 <label className="block text-sm mb-1">Senha</label>
-                <input className="w-full border rounded px-2 py-1" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type="password" placeholder="••••••••" />
+                <input className="w-full border rounded px-2 py-1" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type="password" placeholder="••••••••" autoComplete="new-password" />
               </div>
               <div>
                 <label className="block text-sm mb-1">Perfil</label>

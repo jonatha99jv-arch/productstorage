@@ -39,7 +39,7 @@ const STATUS_CONFIG = {
   }
 }
 
-const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk }) => {
+const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState([])
@@ -100,7 +100,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
         item.teseProduto.toLowerCase().includes(searchTerm.toLowerCase())
       
       const matchesProduct = !currentProduct || item.produto === currentProduct
-      const matchesSubProduct = !currentSubProduct || item.subProduto === currentSubProduct
+      const matchesSubProduct = (currentProduct === 'web' && currentSubProduct === 'geral')
+        ? true
+        : (!currentSubProduct || item.subProduto === currentSubProduct)
       const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter)
       
       return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter
@@ -196,21 +198,16 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
             />
           </div>
         </div>
-        <div className="flex gap-2 ml-auto">
-          <button
-            className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50"
-            disabled={selectedIds.length === 0}
-            onClick={() => onDeleteBulk && onDeleteBulk(selectedIds)}
-          >
-            Excluir selecionados ({selectedIds.length})
-          </button>
-          <button
-            className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-red-50 text-red-700"
-            onClick={() => onDeleteBulk && onDeleteBulk(filteredItems.map(i => i.id))}
-          >
-            Excluir todos do trimestre/visão
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex gap-2 ml-auto">
+            <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50" disabled={selectedIds.length === 0} onClick={() => onDeleteBulk && onDeleteBulk(selectedIds)}>
+              Excluir selecionados ({selectedIds.length})
+            </button>
+            <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-red-50 text-red-700" onClick={() => onDeleteBulk && onDeleteBulk(filteredItems.map(i => i.id))}>
+              Excluir todos do trimestre/visão
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabela do Roadmap */}
@@ -218,17 +215,11 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
         <table className="roadmap-table">
           <thead>
             <tr>
-              <th rowSpan="2" className="merged-header w-10">
-                <input
-                  type="checkbox"
-                  aria-label="Selecionar todos"
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedIds(filteredItems.map(i => i.id))
-                    else setSelectedIds([])
-                  }}
-                  checked={selectedIds.length > 0 && selectedIds.length === filteredItems.length}
-                />
-              </th>
+              {canEdit && (
+                <th rowSpan="2" className="merged-header w-10">
+                  <input type="checkbox" aria-label="Selecionar todos" onChange={(e) => { if (e.target.checked) setSelectedIds(filteredItems.map(i => i.id)); else setSelectedIds([]) }} checked={selectedIds.length > 0 && selectedIds.length === filteredItems.length} />
+                </th>
+              )}
               <th rowSpan="2" className="merged-header item-cell">Item</th>
               <th colSpan="3" className="merged-header quarter-header">
                 {currentQuarter.label}
@@ -236,7 +227,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
               <th rowSpan="2" className="merged-header item-cell">Input/Output Metric</th>
               <th rowSpan="2" className="merged-header item-cell">Tese de Produto</th>
-              <th rowSpan="2" className="merged-header w-24">Ações</th>
+              {canEdit && (
+                <th rowSpan="2" className="merged-header w-24">Ações</th>
+              )}
             </tr>
             <tr>
               {currentQuarter.months.map(month => (
@@ -256,15 +249,11 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
             ) : (
               filteredItems.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="text-center align-top">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(item.id)}
-                      onChange={(e) => {
-                        setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id))
-                      }}
-                    />
-                  </td>
+                  {canEdit && (
+                    <td className="text-center align-top">
+                      <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={(e) => { setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id)) }} />
+                    </td>
+                  )}
                   <td className="item-cell">
                     <div className="space-y-2">
                       <div className="font-semibold text-company-dark-blue">
@@ -350,26 +339,18 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                     </div>
                   </td>
                   
-                  <td className="text-center">
-                    <div className="flex space-x-1 justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(item)}
-                        className="h-8 w-8 p-0 hover:bg-blue-100"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(item.id)}
-                        className="h-8 w-8 p-0 hover:bg-red-100"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
+                  {canEdit && (
+                    <td className="text-center">
+                      <div className="flex space-x-1 justify-center">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="h-8 w-8 p-0 hover:bg-blue-100">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="h-8 w-8 p-0 hover:bg-red-100">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

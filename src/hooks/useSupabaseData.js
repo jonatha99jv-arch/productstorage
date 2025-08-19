@@ -145,7 +145,14 @@ export const useSupabaseData = () => {
           setOkrs(JSON.parse(savedOKRs))
         }
       } else {
-        setOkrs(okrData || [])
+        const mappedOkrs = (okrData || []).map(db => ({
+          id: db.id,
+          objetivo: db.objetivo || db.titulo || '',
+          keyResults: Array.isArray(db.key_results) ? db.key_results : [],
+          created_at: db.created_at,
+          updated_at: db.updated_at,
+        }))
+        setOkrs(mappedOkrs)
       }
 
     } catch (err) {
@@ -289,11 +296,17 @@ export const useSupabaseData = () => {
 
   const saveOKR = async (okrData) => {
     try {
+      const toDb = (okr) => ({
+        objetivo: okr.objetivo,
+        titulo: okr.objetivo, // compat: alguns esquemas exigem titulo NOT NULL
+        key_results: okr.keyResults || [],
+        updated_at: new Date().toISOString(),
+      })
       if (okrData.id && okrData.id !== 'new') {
         // Atualizar OKR existente
         const { data, error } = await supabase
           .from('okrs')
-          .update(okrData)
+          .update(toDb(okrData))
           .eq('id', okrData.id)
           .select()
 
@@ -307,37 +320,45 @@ export const useSupabaseData = () => {
           )
           localStorage.setItem('okrs', JSON.stringify(okrs))
         } else {
-          setOkrs(okrs => 
-            okrs.map(okr => 
-              okr.id === okrData.id ? data[0] : okr
-            )
-          )
+          const updated = {
+            id: data[0].id,
+            objetivo: data[0].objetivo || data[0].titulo || '',
+            keyResults: Array.isArray(data[0].key_results) ? data[0].key_results : [],
+            created_at: data[0].created_at,
+            updated_at: data[0].updated_at,
+          }
+          setOkrs(okrs => okrs.map(okr => okr.id === okrData.id ? updated : okr))
         }
       } else {
         // Criar novo OKR
-        const newOKR = {
-          ...okrData,
-          id: undefined, // Deixar o Supabase gerar o ID
+        const payload = {
+          ...toDb(okrData),
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
         }
 
         const { data, error } = await supabase
           .from('okrs')
-          .insert([newOKR])
+          .insert([payload])
           .select()
 
         if (error) {
           console.error('Erro ao criar OKR:', error)
           // Fallback para localStorage
           const fallbackOKR = {
-            ...newOKR,
+            ...okrData,
             id: Date.now().toString()
           }
           setOkrs(okrs => [...okrs, fallbackOKR])
           localStorage.setItem('okrs', JSON.stringify([...okrs, fallbackOKR]))
         } else {
-          setOkrs(okrs => [...okrs, data[0]])
+          const created = {
+            id: data[0].id,
+            objetivo: data[0].objetivo || data[0].titulo || '',
+            keyResults: Array.isArray(data[0].key_results) ? data[0].key_results : [],
+            created_at: data[0].created_at,
+            updated_at: data[0].updated_at,
+          }
+          setOkrs(okrs => [...okrs, created])
         }
       }
     } catch (err) {

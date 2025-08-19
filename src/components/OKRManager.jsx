@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, Target, X } from 'lucide-react'
 
-const OKRManager = ({ okrs, roadmapItems, onSaveOKR, onDeleteOKR, onClose }) => {
+const OKRManager = ({ okrs, roadmapItems, onSaveOKR, onDeleteOKR, onClose, asPage = false }) => {
   const [showOKRForm, setShowOKRForm] = useState(false)
   const [editingOKR, setEditingOKR] = useState(null)
   const [formData, setFormData] = useState({
@@ -108,23 +108,17 @@ const OKRManager = ({ okrs, roadmapItems, onSaveOKR, onDeleteOKR, onClose }) => 
     return roadmapItems.filter(item => item.okrId === okrId)
   }
 
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Gerenciar OKRs</span>
-            <Button onClick={handleAddOKR} className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Novo OKR</span>
-            </Button>
-          </DialogTitle>
-          <DialogDescription>
-            Gerencie seus OKRs (Objectives and Key Results) e veja quais itens do roadmap estão vinculados a cada um.
-          </DialogDescription>
-        </DialogHeader>
+  const Content = (
+    <>
+      <div className="flex items-center justify-between mb-4 pr-10">
+        <h2 className="text-lg font-semibold">Gerenciar OKRs</h2>
+        <Button onClick={handleAddOKR} className="flex items-center space-x-2">
+          <Plus className="h-4 w-4" />
+          <span>Novo OKR</span>
+        </Button>
+      </div>
 
-        <div className="space-y-4">
+      <div className="space-y-4">
           {okrs.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Target className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -194,84 +188,68 @@ const OKRManager = ({ okrs, roadmapItems, onSaveOKR, onDeleteOKR, onClose }) => 
               )
             })
           )}
-        </div>
+      </div>
 
-        {/* Modal de formulário OKR */}
-        {showOKRForm && (
-          <Dialog open={true} onOpenChange={() => setShowOKRForm(false)}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingOKR ? 'Editar OKR' : 'Novo OKR'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingOKR ? 'Edite as informações do OKR abaixo.' : 'Crie um novo OKR definindo um objetivo e seus resultados-chave.'}
-                </DialogDescription>
-              </DialogHeader>
+      {/* Modal de formulário OKR */}
+      {showOKRForm && (
+        <Dialog open={true} onOpenChange={() => setShowOKRForm(false)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingOKR ? 'Editar OKR' : 'Novo OKR'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingOKR ? 'Edite as informações do OKR abaixo.' : 'Crie um novo OKR definindo um objetivo e seus resultados-chave.'}
+              </DialogDescription>
+            </DialogHeader>
 
-              <form onSubmit={handleSubmitOKR} className="space-y-6">
-                {/* Objetivo */}
-                <div>
-                  <Label htmlFor="objetivo">Objetivo *</Label>
-                  <Textarea
-                    id="objetivo"
-                    value={formData.objetivo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, objetivo: e.target.value }))}
-                    placeholder="Ex: Aumentar a satisfação do cliente"
-                    rows={2}
-                    required
-                  />
-                </div>
-
-                {/* Key Results */}
-                <div>
-                  <Label>Key Results *</Label>
-                  <div className="space-y-2">
-                    {formData.keyResults.map((kr, index) => (
-                      <div key={index} className="flex space-x-2">
-                        <Input
-                          value={kr}
-                          onChange={(e) => handleKeyResultChange(index, e.target.value)}
-                          placeholder={`Key Result ${index + 1}`}
-                        />
-                        {formData.keyResults.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeKeyResult(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addKeyResult}
-                      className="flex items-center space-x-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Adicionar Key Result</span>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Botões */}
-                <div className="flex justify-end space-x-3">
-                  <Button type="button" variant="outline" onClick={() => setShowOKRForm(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit">
-                    {editingOKR ? 'Salvar Alterações' : 'Criar OKR'}
+            <form onSubmit={handleSubmitOKR} className="space-y-6">
+              <div>
+                <Label htmlFor="objetivo" className="mb-2 block">Objetivo *</Label>
+                <Textarea id="objetivo" value={formData.objetivo} onChange={(e) => setFormData(prev => ({ ...prev, objetivo: e.target.value }))} placeholder="Ex: Aumentar a satisfação do cliente" rows={2} required />
+              </div>
+              <div>
+                <Label className="mb-2 block">Key Results *</Label>
+                <div className="space-y-2">
+                  {formData.keyResults.map((kr, index) => (
+                    <div key={index} className="flex space-x-2">
+                      <Input value={kr} onChange={(e) => handleKeyResultChange(index, e.target.value)} placeholder={`Key Result ${index + 1}`} />
+                      {formData.keyResults.length > 1 && (
+                        <Button type="button" variant="outline" size="sm" onClick={() => removeKeyResult(index)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addKeyResult} className="flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Adicionar Key Result</span>
                   </Button>
                 </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        )}
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button type="button" variant="outline" onClick={() => setShowOKRForm(false)}>Cancelar</Button>
+                <Button type="submit">{editingOKR ? 'Salvar Alterações' : 'Criar OKR'}</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  )
+
+  if (asPage) {
+    return (
+      <div className="bg-white p-6 rounded-lg border">
+        {Content}
+      </div>
+    )
+  }
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        {Content}
       </DialogContent>
     </Dialog>
   )

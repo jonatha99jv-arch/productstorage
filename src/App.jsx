@@ -149,11 +149,12 @@ function App() {
       const matchesProduct = item.produto === currentProduct
       
       if (currentProduct === 'web') {
+        // Em 'Geral', mostrar todos os subprodutos (backoffice, portal_estrela, doctor, company) e itens sem subProduto
         if (currentSubProduct === 'geral') {
-          return matchesProduct && (!item.subProduto || item.subProduto === '')
-        } else {
-          return matchesProduct && item.subProduto === currentSubProduct
+          return matchesProduct
         }
+        // Nas demais abas, filtrar pelo subproduto selecionado
+        return matchesProduct && item.subProduto === currentSubProduct
       }
       
       return matchesProduct
@@ -179,30 +180,44 @@ function App() {
   const [activePage, setActivePage] = useState('roadmap')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
+  const canEdit = requireRole('editor')
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className={`hidden sm:flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white p-4 space-y-2 transition-all duration-200`}>
-        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10">
-          <span className="inline-block" style={{width:18,height:18,background:'#FF9015',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
+      <aside className={`hidden sm:flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 space-y-2 transition-all duration-200`}>
+        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+          <span className="inline-block shrink-0" style={{width:20,height:20,background:'#FF9015',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Menu</span>
         </button>
-        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 ${activePage==='roadmap'?'bg-white/10':''}`}>
-          <Target className="h-4 w-4 text-white" />
+        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
+          <Target className="h-5 w-5 text-white shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
         </button>
         {requireRole('admin') && (
-          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 ${activePage==='users'?'bg-white/10':''}`}>
-            <Users className="h-4 w-4" />
+          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
+            <Users className="h-5 w-5 shrink-0" />
             <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
           </button>
         )}
-        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 ${activePage==='profile'?'bg-white/10':''}`}>
-          <User className="h-4 w-4" />
+        {canEdit && (
+        <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+          <BarChart3 className="h-5 w-5 shrink-0" />
+          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
+        </button>
+        )}
+        {canEdit && (
+        <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+          <Settings className="h-5 w-5 shrink-0" />
+          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
+        </button>
+        )}
+        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
+          <User className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
         </button>
         <div className="pt-6" />
         <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-red-200 mt-auto">
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
         </button>
       </aside>
@@ -212,7 +227,18 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl sm:text-2xl font-bold text-white">
-              Roadmap Interativo - {getPageTitle()}
+              {activePage==='roadmap' && (
+                <>Roadmap Interativo - {getPageTitle()}</>
+              )}
+              {activePage==='users' && (
+                <>Gerenciar Usuários</>
+              )}
+              {activePage==='profile' && (
+                <>Edição de Perfil</>
+              )}
+              {activePage==='okrs' && (
+                <>Gerenciar OKRs</>
+              )}
             </h1>
             <div className="flex space-x-3">
               {error && (
@@ -229,25 +255,22 @@ function App() {
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Atualizar</span>
               </Button>
-              <Button
-                onClick={() => setShowOKRProgress(true)}
-                variant="outline"
-                className="flex items-center space-x-2 bg-white text-company-dark-blue border-white hover:bg-gray-100"
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span>Progresso OKRs</span>
-              </Button>
+              {/* Progresso OKRs movido para menu lateral */}
               {/* removido Sair do header como solicitado */}
-              <Button
-                onClick={handleAddItem}
-                className="flex items-center space-x-2 bg-company-orange hover:bg-company-red-orange text-white"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Novo Item</span>
-              </Button>
-              <BulkImportModal onImport={handleSaveItem} onUpsert={async (payload) => {
-                await saveRoadmapItem(payload)
-              }} />
+              {canEdit && (
+                <Button
+                  onClick={handleAddItem}
+                  className="flex items-center space-x-2 bg-company-orange hover:bg-company-red-orange text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Novo Item</span>
+                </Button>
+              )}
+              {canEdit && (
+                <BulkImportModal onImport={handleSaveItem} onUpsert={async (payload) => {
+                  await saveRoadmapItem(payload)
+                }} />
+              )}
             </div>
           </div>
         </div>
@@ -284,13 +307,22 @@ function App() {
               currentProduct={currentProduct}
               currentSubProduct={currentSubProduct}
               onDeleteBulk={handleDeleteBulk}
+              canEdit={canEdit}
             />
-            {activePage==='users' && requireRole('admin') && (
-              <div className="mt-6">
-                <UsersAdmin />
-              </div>
-            )}
           </>
+        )}
+        {activePage==='users' && requireRole('admin') && (
+          <UsersAdmin />
+        )}
+        {activePage==='okrs' && (
+          <OKRManager
+            okrs={okrs}
+            roadmapItems={roadmapItems}
+            onSaveOKR={handleSaveOKR}
+            onDeleteOKR={handleDeleteOKR}
+            onClose={() => setActivePage('roadmap')}
+            asPage={true}
+          />
         )}
         {activePage==='profile' && (
           <ProfileEdit />

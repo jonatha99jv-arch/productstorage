@@ -9,6 +9,7 @@ const UsersAdmin = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ email:'', password:'', role:'viewer'})
+  const [search, setSearch] = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -48,17 +49,20 @@ const UsersAdmin = () => {
     await load()
   }
 
+  const filteredUsers = users.filter(u => u.email.toLowerCase().includes(search.toLowerCase()))
+
   return (
     <div className="bg-white p-4 border rounded-lg">
       <h2 className="text-lg font-semibold mb-3">Gerenciar Usuários</h2>
       {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-4">
         <input className="border rounded px-2 py-1" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
         <input className="border rounded px-2 py-1" placeholder="Senha" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} />
         <select className="border rounded px-2 py-1" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
           {ROLES.map(r=> <option key={r} value={r}>{r}</option>)}
         </select>
         <button className="bg-company-orange text-white rounded px-3" onClick={createUser}>Criar</button>
+        <input className="border rounded px-2 py-1 sm:col-span-2" placeholder="Buscar por email" value={search} onChange={e=>setSearch(e.target.value)} />
       </div>
       {loading ? 'Carregando...' : (
         <table className="w-full text-sm">
@@ -71,7 +75,7 @@ const UsersAdmin = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
+            {filteredUsers.map(u => (
               <tr key={u.id} className="border-t">
                 <td>{u.email}</td>
                 <td>

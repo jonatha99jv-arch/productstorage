@@ -180,23 +180,23 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="hidden sm:block w-64 bg-white border-r p-4 space-y-2">
-        <div className="text-lg font-semibold text-company-dark-blue mb-2">Menu</div>
+      <aside className="hidden sm:block w-64 bg-company-dark-blue text-white p-4 space-y-2">
+        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 ${activePage==='roadmap'?'bg-white/10':''}`}>
+          <span className="inline-block" style={{width:18,height:18,background:'#FF9015',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
+          Roadmap
+        </button>
         {requireRole('admin') && (
-          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 ${activePage==='users'?'bg-gray-100':''}`}>
+          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 ${activePage==='users'?'bg-white/10':''}`}>
             <Users className="h-4 w-4" />
             Gerenciar Usuários
           </button>
         )}
-        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 ${activePage==='profile'?'bg-gray-100':''}`}>
+        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 ${activePage==='profile'?'bg-white/10':''}`}>
           <User className="h-4 w-4" />
           Edição de Perfil
         </button>
         <div className="pt-6" />
-        <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-red-600 mt-auto">
-          <LogOut className="h-4 w-4" />
-          Sair
-        </button>
+        <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-red-200 mt-auto"><LogOut className="h-4 w-4" />Sair</button>
       </aside>
       <div className="flex-1">
       {/* Header */}

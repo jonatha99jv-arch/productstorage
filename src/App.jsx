@@ -11,6 +11,9 @@ import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
 import DatabaseSetup from './components/DatabaseSetup'
 import './App.css'
+import Login from './components/Login'
+import UsersAdmin from './components/UsersAdmin'
+import { getSession, requireRole, logout } from './lib/auth'
 
 function App() {
   const [showDatabaseSetup, setShowDatabaseSetup] = useState(false)
@@ -76,6 +79,11 @@ function App() {
   const handleDatabaseSetupComplete = () => {
     setShowDatabaseSetup(false)
     setDatabaseReady(true)
+  }
+
+  const session = getSession()
+  if (!session) {
+    return <Login onSuccess={() => window.location.reload()} />
   }
 
   // Se precisar configurar o banco, mostrar tela de configuração
@@ -199,14 +207,17 @@ function App() {
                 <BarChart3 className="h-4 w-4" />
                 <span>Progresso OKRs</span>
               </Button>
-              <Button
-                onClick={() => setShowOKRManager(true)}
-                variant="outline"
-                className="flex items-center space-x-2 bg-white text-company-dark-blue border-white hover:bg-gray-100"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Gerenciar OKRs</span>
-              </Button>
+              {requireRole('admin') && (
+                <Button
+                  onClick={() => setShowOKRManager(true)}
+                  variant="outline"
+                  className="flex items-center space-x-2 bg-white text-company-dark-blue border-white hover:bg-gray-100"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Gerenciar Usuários</span>
+                </Button>
+              )}
+              <Button onClick={() => { logout(); window.location.reload() }} variant="outline" className="bg-white text-company-dark-blue border-white hover:bg-gray-100">Sair</Button>
               <Button
                 onClick={handleAddItem}
                 className="flex items-center space-x-2 bg-company-orange hover:bg-company-red-orange text-white"
@@ -254,6 +265,11 @@ function App() {
               currentSubProduct={currentSubProduct}
               onDeleteBulk={handleDeleteBulk}
             />
+            {requireRole('admin') && (
+              <div className="mt-6">
+                <UsersAdmin />
+              </div>
+            )}
           </>
         )}
       </main>

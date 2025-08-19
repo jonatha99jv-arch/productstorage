@@ -1,5 +1,20 @@
 -- Esquema do banco de dados para o Roadmap Interativo
 
+-- Tabela para armazenar os OKRs (criada PRIMEIRO pois é referenciada por roadmap_items)
+CREATE TABLE IF NOT EXISTS okrs (
+    id SERIAL PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    descricao TEXT,
+    objetivo TEXT NOT NULL,
+    key_results TEXT[] NOT NULL, -- Array de key results
+    trimestre VARCHAR(10),
+    ano INTEGER,
+    progresso INTEGER DEFAULT 0, -- Progresso em porcentagem (0-100)
+    status VARCHAR(50) DEFAULT 'ativo',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Tabela para armazenar os itens do roadmap
 CREATE TABLE IF NOT EXISTS roadmap_items (
     id SERIAL PRIMARY KEY,
@@ -14,21 +29,6 @@ CREATE TABLE IF NOT EXISTS roadmap_items (
     responsavel VARCHAR(255),
     okr_id INTEGER REFERENCES okrs(id),
     tags TEXT[], -- Array de tags
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Tabela para armazenar os OKRs
-CREATE TABLE IF NOT EXISTS okrs (
-    id SERIAL PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    objetivo TEXT NOT NULL,
-    key_results TEXT[] NOT NULL, -- Array de key results
-    trimestre VARCHAR(10),
-    ano INTEGER,
-    progresso INTEGER DEFAULT 0, -- Progresso em porcentagem (0-100)
-    status VARCHAR(50) DEFAULT 'ativo',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -78,4 +78,3 @@ COMMENT ON COLUMN roadmap_items.sub_produto IS 'Sub-produto para categorização
 COMMENT ON COLUMN roadmap_items.status IS 'Status do item: planejado, em_andamento, concluido, cancelado';
 COMMENT ON COLUMN roadmap_items.prioridade IS 'Prioridade: baixa, media, alta, critica';
 COMMENT ON COLUMN okrs.progresso IS 'Progresso do OKR em porcentagem (0-100)';
-

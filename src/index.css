@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: system-ui, sans-serif;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #f9fafb;
+  }
+}
+
+/* Animations for Popover and other components */
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes animate-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes fade-in-0 {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out-0 {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes zoom-in-95 {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+
+@keyframes zoom-out-95 {
+  from { transform: scale(1); }
+  to { transform: scale(0.95); }
+}
+
+/* Data attribute animations */
+[data-state=open] {
+  animation: animate-in 150ms ease-out;
+}
+
+[data-state=closed] {
+  animation: animate-out 150ms ease-in;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-outline {
+    @apply border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-destructive {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-link {
+    @apply text-blue-600 hover:text-blue-700 underline font-medium py-2 px-4;
+  }
+  
+  .btn-sm {
+    @apply py-1 px-3 text-sm;
+  }
+  
+  .btn-lg {
+    @apply py-3 px-6 text-lg;
+  }
+  
+  .btn-icon {
+    @apply p-2;
+  }
+  
+  .bg-primary {
+    @apply bg-blue-600;
+  }
+  
+  .bg-secondary {
+    @apply bg-gray-200;
+  }
+  
+  .bg-destructive {
+    @apply bg-red-600;
+  }
+  
+  .bg-background {
+    @apply bg-white;
+  }
+  
+  .text-primary {
+    @apply text-blue-600;
+  }
+  
+  .text-secondary {
+    @apply text-gray-600;
+  }
+  
+  .text-destructive {
+    @apply text-red-600;
+  }
+  
+  .text-primary-foreground {
+    @apply text-white;
+  }
+  
+  .text-secondary-foreground {
+    @apply text-gray-800;
+  }
+  
+  .border-ring {
+    @apply border-blue-300;
+  }
+  
+  .ring-ring {
+    @apply ring-blue-300;
+  }
+  
+  .ring-destructive {
+    @apply ring-red-300;
+  }
+  
+  .bg-accent {
+    @apply bg-gray-100;
+  }
+  
+  .text-accent-foreground {
+    @apply text-gray-800;
+  }
+  
+  .bg-input {
+    @apply bg-gray-50;
+  }
+  
+  .border-input {
+    @apply border-gray-300;
+  }
+  
+  .shadow-xs {
+    @apply shadow-sm;
+  }
+}

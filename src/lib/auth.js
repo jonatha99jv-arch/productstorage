@@ -33,4 +33,22 @@ export function requireRole(minRole) {
   return order[s.role] >= order[minRole]
 }
 
+export async function ensureDefaultAdmin() {
+  const email = 'jonatha.vieira@starbem.app'
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .limit(1)
+    if (error) return
+    if (!data || data.length === 0) {
+      const hash = await bcrypt.hash('Teste123', 10)
+      await supabase.from('users').insert([{ email, password_hash: hash, role: 'admin' }])
+    }
+  } catch (_) {
+    // silencioso
+  }
+}
+
 

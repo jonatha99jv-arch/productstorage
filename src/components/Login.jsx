@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { login } from '@/lib/auth'
+import { login, ensureDefaultAdmin } from '@/lib/auth'
 
 const Login = ({ onSuccess }) => {
   const [email, setEmail] = useState('')
@@ -12,6 +12,8 @@ const Login = ({ onSuccess }) => {
     setError('')
     setLoading(true)
     try {
+      // garantir admin padrão na primeira execução
+      await ensureDefaultAdmin()
       const session = await login(email, password)
       onSuccess?.(session)
     } catch (err) {
@@ -27,7 +29,7 @@ const Login = ({ onSuccess }) => {
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-3">
             <span className="text-4xl font-semibold tracking-tight" style={{color:'#1D1830'}}>Starbem</span>
-            <span className="inline-block" style={{width:32,height:32,background:'linear-gradient(135deg,#FF9015,#FF1F76)',clipPath:'polygon(50% 0%, 90% 35%, 65% 35%, 100% 65%, 60% 65%, 50% 100%, 40% 65%, 0 65%, 35% 35%, 10% 35%)'}}/>
+            <span className="inline-block" style={{width:32,height:32,background:'linear-gradient(135deg,#FF9015,#FF1F76)',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}}/>
           </div>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">

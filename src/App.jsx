@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button.jsx'
 import { Plus, Settings, BarChart3, RefreshCw } from 'lucide-react'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
 import OKRManager from './components/OKRManager'
+import BulkImportModal from './components/BulkImportModal'
 import OKRProgress from './components/OKRProgress'
 import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
@@ -202,6 +203,7 @@ function App() {
                 <Plus className="h-4 w-4" />
                 <span>Novo Item</span>
               </Button>
+              <BulkImportModal onImport={handleSaveItem} />
             </div>
           </div>
         </div>

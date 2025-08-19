@@ -70,7 +70,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return quarterMonths.some(month => isItemActiveInMonth(item, month, currentYear))
   }
 
-  // Função de ordenação por prioridade de status e depois por data
+  // Função de ordenação por prioridade de status e depois por data de início (mais antiga primeiro)
   const sortItems = (itemsToSort) => {
     return [...itemsToSort].sort((a, b) => {
       // Primeiro critério: prioridade do status
@@ -81,11 +81,12 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
         return statusPriorityA - statusPriorityB
       }
       
-      // Segundo critério: data mais recente primeiro
-      const dateA = a.dataInicio ? new Date(a.dataInicio) : new Date(0)
-      const dateB = b.dataInicio ? new Date(b.dataInicio) : new Date(0)
+      // Segundo critério: data de início (mais antiga primeiro)
+      const MAX_DATE = new Date(8640000000000000)
+      const dateA = a.dataInicio ? new Date(a.dataInicio) : MAX_DATE
+      const dateB = b.dataInicio ? new Date(b.dataInicio) : MAX_DATE
       
-      return dateB - dateA // Ordem decrescente (mais recente primeiro)
+      return dateA - dateB
     })
   }
 

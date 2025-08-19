@@ -131,10 +131,10 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Nome do Item */}
-          <div>
-            <Label htmlFor="nome">Nome do Item *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="nome">Novo Item *</Label>
             <Input
               id="nome"
               value={formData.nome}
@@ -145,7 +145,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           </div>
 
           {/* Produto */}
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="produto">Produto *</Label>
             <select
               id="produto"
@@ -187,8 +187,32 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             </div>
           )}
 
+          {/* Métrica Input/Output */}
+          <div className="space-y-1.5">
+            <Label htmlFor="metric">Métrica Input/Output *</Label>
+            <Textarea
+              id="metric"
+              value={formData.inputOutputMetric}
+              onChange={(e) => handleInputChange('inputOutputMetric', e.target.value)}
+              placeholder="Ex: Aumentar em 10% a taxa de NPS em 3 meses"
+              required
+            />
+          </div>
+
+          {/* Tese de Produto */}
+          <div className="space-y-1.5">
+            <Label htmlFor="tese">Tese de Produto *</Label>
+            <Textarea
+              id="tese"
+              value={formData.teseProduto}
+              onChange={(e) => handleInputChange('teseProduto', e.target.value)}
+              placeholder="Ex: Acreditamos que o novo app global melhora a experiência..."
+              required
+            />
+          </div>
+
           {/* Subitens */}
-          <div>
+          <div className="space-y-1.5">
             <Label>Subitens</Label>
             {formData.subitens.map((subitem, index) => (
               <div key={index} className="flex items-center space-x-2 mt-2">
@@ -223,7 +247,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           </div>
 
           {/* Data de Início */}
-          <div>
+          <div className="space-y-1.5">
             <Label>Data de Início</Label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -254,7 +278,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           </div>
 
           {/* Duração */}
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="duracao">Duração (meses)</Label>
             <Input
               id="duracao"
@@ -266,33 +290,8 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
               placeholder="Ex: 3"
             />
           </div>
-
-          {/* Métrica Input/Output */}
-          <div>
-            <Label htmlFor="metric">Métrica Input/Output *</Label>
-            <Textarea
-              id="metric"
-              value={formData.inputOutputMetric}
-              onChange={(e) => handleInputChange('inputOutputMetric', e.target.value)}
-              placeholder="Ex: Aumentar em 10% a taxa de NPS em 3 meses"
-              required
-            />
-          </div>
-
-          {/* Tese de Produto */}
-          <div>
-            <Label htmlFor="tese">Tese de Produto *</Label>
-            <Textarea
-              id="tese"
-              value={formData.teseProduto}
-              onChange={(e) => handleInputChange('teseProduto', e.target.value)}
-              placeholder="Ex: Acreditamos que o novo app global melhora a experiência..."
-              required
-            />
-          </div>
-
           {/* Status */}
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="status">Status</Label>
             <select
               id="status"
@@ -309,7 +308,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           </div>
 
           {/* OKR Vinculado */}
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="okr">OKR Vinculado</Label>
             <select
               id="okr"

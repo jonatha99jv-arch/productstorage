@@ -32,6 +32,7 @@ const WEB_SUB_PRODUCTS = [
 
 const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [formData, setFormData] = useState({
+    id: null,
     nome: '',
     subitens: [''],
     inputOutputMetric: '',
@@ -49,6 +50,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   useEffect(() => {
     if (item) {
       setFormData({
+        id: item.id || null,
         nome: item.nome || '',
         subitens: item.subitens && item.subitens.length > 0 ? item.subitens : [''],
         inputOutputMetric: item.inputOutputMetric || '',

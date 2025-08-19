@@ -46,14 +46,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   // Função para verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
     if (!item.dataInicio || !item.duracaoMeses) return false
-    
+
     const startDate = new Date(item.dataInicio)
-    const itemEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + parseInt(item.duracaoMeses), 0) // Last day of the item's end month
+    // normalizar data de início para primeiro dia do mês de início
+    const startMonthDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
+    // duração em meses inclui o mês de início. Ex.: início Julho + duração 2 => Julho e Agosto
+    const endMonthInclusive = new Date(startMonthDate.getFullYear(), startMonthDate.getMonth() + parseInt(item.duracaoMeses), 0) // último dia do mês final
 
-    const checkMonthStartDate = new Date(year, month - 1, 1) // First day of the month being checked
-    const checkMonthEndDate = new Date(year, month, 0) // Last day of the month being checked
+    const checkMonthStartDate = new Date(year, month - 1, 1)
+    const checkMonthEndDate = new Date(year, month, 0)
 
-    return startDate <= checkMonthEndDate && itemEndDate >= checkMonthStartDate
+    return startMonthDate <= checkMonthEndDate && endMonthInclusive >= checkMonthStartDate
   }
 
   // Função para verificar se um item deve ser exibido no trimestre atual

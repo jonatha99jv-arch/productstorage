@@ -12,6 +12,86 @@ export const useSupabaseData = () => {
     loadData()
   }, [])
 
+  const mapDbToApp = (dbItem) => {
+    // Descompactar descricao caso esteja em JSON com campos adicionais
+    let inputOutputMetric = ''
+    let teseProduto = ''
+    try {
+      if (dbItem.descricao && typeof dbItem.descricao === 'string' && dbItem.descricao.trim().startsWith('{')) {
+        const extra = JSON.parse(dbItem.descricao)
+        inputOutputMetric = extra.inputOutputMetric || ''
+        teseProduto = extra.teseProduto || ''
+      } else if (dbItem.descricao) {
+        teseProduto = dbItem.descricao
+      }
+    } catch (_) {
+      // Ignorar parse errors e manter descricao como teseProduto
+      teseProduto = dbItem.descricao || ''
+    }
+
+    // Reconstituir subitens e duracao a partir de tags
+    const tags = Array.isArray(dbItem.tags) ? dbItem.tags : []
+    let duracaoMeses = ''
+    const subitens = []
+    for (const tag of tags) {
+      if (typeof tag === 'string' && tag.startsWith('duracao:')) {
+        const parts = tag.split(':')
+        if (parts[1]) duracaoMeses = parts[1]
+      } else if (typeof tag === 'string') {
+        subitens.push(tag)
+      }
+    }
+
+    return {
+      id: dbItem.id,
+      nome: dbItem.titulo || '',
+      inputOutputMetric,
+      teseProduto,
+      produto: dbItem.produto || 'aplicativo',
+      subProduto: dbItem.sub_produto || '',
+      status: dbItem.status || 'nao_iniciado',
+      dataInicio: dbItem.data_inicio ? new Date(dbItem.data_inicio) : null,
+      duracaoMeses,
+      okrId: dbItem.okr_id || '',
+      subitens,
+    }
+  }
+
+  const mapAppToDb = (appItem) => {
+    const descricao = JSON.stringify({
+      inputOutputMetric: appItem.inputOutputMetric || '',
+      teseProduto: appItem.teseProduto || ''
+    })
+
+    const tags = Array.isArray(appItem.subitens) ? [...appItem.subitens] : []
+    if (appItem.duracaoMeses) tags.push(`duracao:${appItem.duracaoMeses}`)
+
+    const toIsoDate = (dateLike) => {
+      if (!dateLike) return null
+      const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike
+      if (Number.isNaN(d.getTime())) return null
+      // retornar apenas a parte da data para coluna DATE
+      return d.toISOString().slice(0, 10)
+    }
+
+    return {
+      // id é autogerado no insert; em update não enviar id no payload
+      titulo: appItem.nome || '',
+      descricao,
+      produto: appItem.produto || 'aplicativo',
+      sub_produto: appItem.subProduto || null,
+      status: appItem.status || 'nao_iniciado',
+      prioridade: appItem.prioridade || 'media',
+      data_inicio: toIsoDate(appItem.dataInicio),
+      // data_fim poderia ser calculada a partir da duração, mas manteremos null
+      data_fim: null,
+      responsavel: appItem.responsavel || null,
+      okr_id: appItem.okrId ? Number(appItem.okrId) : null,
+      tags,
+      updated_at: new Date().toISOString(),
+    }
+  }
+
   const loadData = async () => {
     try {
       setLoading(true)
@@ -31,7 +111,8 @@ export const useSupabaseData = () => {
           setRoadmapItems(JSON.parse(savedItems))
         }
       } else {
-        setRoadmapItems(roadmapData || [])
+        const mapped = (roadmapData || []).map(mapDbToApp)
+        setRoadmapItems(mapped)
       }
 
       // Carregar OKRs
@@ -75,9 +156,10 @@ export const useSupabaseData = () => {
     try {
       if (itemData.id && itemData.id !== 'new') {
         // Atualizar item existente
+        const payload = mapAppToDb(itemData)
         const { data, error } = await supabase
           .from('roadmap_items')
-          .update(itemData)
+          .update(payload)
           .eq('id', itemData.id)
           .select()
 
@@ -91,37 +173,29 @@ export const useSupabaseData = () => {
           )
           localStorage.setItem('roadmapItems', JSON.stringify(roadmapItems))
         } else {
-          setRoadmapItems(items => 
-            items.map(item => 
-              item.id === itemData.id ? data[0] : item
-            )
-          )
+          const updated = mapDbToApp(data[0])
+          setRoadmapItems(items => items.map(item => item.id === itemData.id ? updated : item))
         }
       } else {
         // Criar novo item
-        const newItem = {
-          ...itemData,
-          id: undefined, // Deixar o Supabase gerar o ID
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-
+        const payload = mapAppToDb(itemData)
         const { data, error } = await supabase
           .from('roadmap_items')
-          .insert([newItem])
+          .insert([payload])
           .select()
 
         if (error) {
           console.error('Erro ao criar item:', error)
           // Fallback para localStorage
           const fallbackItem = {
-            ...newItem,
+            ...itemData,
             id: Date.now().toString()
           }
           setRoadmapItems(items => [...items, fallbackItem])
           localStorage.setItem('roadmapItems', JSON.stringify([...roadmapItems, fallbackItem]))
         } else {
-          setRoadmapItems(items => [...items, data[0]])
+          const created = mapDbToApp(data[0])
+          setRoadmapItems(items => [...items, created])
         }
       }
     } catch (err) {

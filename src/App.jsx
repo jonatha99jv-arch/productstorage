@@ -102,6 +102,16 @@ function App() {
     await deleteRoadmapItem(itemId)
   }
 
+  const handleDeleteBulk = async (ids) => {
+    if (!ids || ids.length === 0) return
+    if (window.confirm(`Excluir ${ids.length} item(ns)?`)) {
+      // função vem do hook
+      if (typeof deleteRoadmapItemsBulk === 'function') {
+        await deleteRoadmapItemsBulk(ids)
+      }
+    }
+  }
+
   const handleUpdateItemStatus = async (itemId, newStatus) => {
     await updateRoadmapItemStatus(itemId, newStatus)
   }
@@ -241,6 +251,7 @@ function App() {
               onUpdateItemStatus={handleUpdateItemStatus}
               currentProduct={currentProduct}
               currentSubProduct={currentSubProduct}
+              onDeleteBulk={handleDeleteBulk}
             />
           </>
         )}

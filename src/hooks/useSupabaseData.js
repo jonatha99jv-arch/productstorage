@@ -240,6 +240,27 @@ export const useSupabaseData = () => {
     }
   }
 
+  const deleteRoadmapItemsBulk = async (itemIds) => {
+    try {
+      if (!Array.isArray(itemIds) || itemIds.length === 0) return
+      const { error } = await supabase
+        .from('roadmap_items')
+        .delete()
+        .in('id', itemIds)
+
+      if (error) {
+        console.error('Erro ao deletar itens em massa:', error)
+      }
+
+      setRoadmapItems(items => items.filter(item => !itemIds.includes(item.id)))
+      const remaining = roadmapItems.filter(item => !itemIds.includes(item.id))
+      localStorage.setItem('roadmapItems', JSON.stringify(remaining))
+    } catch (err) {
+      console.error('Erro ao deletar itens em massa:', err)
+      setError(err.message)
+    }
+  }
+
   const updateRoadmapItemStatus = async (itemId, newStatus) => {
     try {
       const { error } = await supabase
@@ -359,6 +380,7 @@ export const useSupabaseData = () => {
     error,
     saveRoadmapItem,
     deleteRoadmapItem,
+    deleteRoadmapItemsBulk,
     updateRoadmapItemStatus,
     saveOKR,
     deleteOKR,

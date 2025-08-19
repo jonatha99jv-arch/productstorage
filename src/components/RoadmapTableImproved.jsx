@@ -39,9 +39,10 @@ const STATUS_CONFIG = {
   }
 }
 
-const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct }) => {
+const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk }) => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
 
   // Função para verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
@@ -194,6 +195,21 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
             />
           </div>
         </div>
+        <div className="flex gap-2 ml-auto">
+          <button
+            className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50"
+            disabled={selectedIds.length === 0}
+            onClick={() => onDeleteBulk && onDeleteBulk(selectedIds)}
+          >
+            Excluir selecionados ({selectedIds.length})
+          </button>
+          <button
+            className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-red-50 text-red-700"
+            onClick={() => onDeleteBulk && onDeleteBulk(filteredItems.map(i => i.id))}
+          >
+            Excluir todos do trimestre/visão
+          </button>
+        </div>
       </div>
 
       {/* Tabela do Roadmap */}
@@ -201,6 +217,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
         <table className="roadmap-table">
           <thead>
             <tr>
+              <th rowSpan="2" className="merged-header w-10">
+                <input
+                  type="checkbox"
+                  aria-label="Selecionar todos"
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedIds(filteredItems.map(i => i.id))
+                    else setSelectedIds([])
+                  }}
+                  checked={selectedIds.length > 0 && selectedIds.length === filteredItems.length}
+                />
+              </th>
               <th rowSpan="2" className="merged-header item-cell">Item</th>
               <th colSpan="3" className="merged-header quarter-header">
                 {currentQuarter.label}
@@ -228,6 +255,15 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
             ) : (
               filteredItems.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50">
+                  <td className="text-center align-top">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={(e) => {
+                        setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id))
+                      }}
+                    />
+                  </td>
                   <td className="item-cell">
                     <div className="space-y-2">
                       <div className="font-semibold text-company-dark-blue">

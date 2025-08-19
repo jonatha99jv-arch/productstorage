@@ -42,6 +42,20 @@ export const useSupabaseData = () => {
       }
     }
 
+    // data_inicio pode vir como 'YYYY-MM-DD' (string). Construir Date local sem UTC.
+    let dataInicioLocal = null
+    if (dbItem.data_inicio) {
+      if (typeof dbItem.data_inicio === 'string') {
+        const [yy, mm, dd] = dbItem.data_inicio.split('-').map(Number)
+        if (yy && mm && dd) {
+          dataInicioLocal = new Date(yy, mm - 1, dd)
+        }
+      } else {
+        const d = new Date(dbItem.data_inicio)
+        if (!Number.isNaN(d.getTime())) dataInicioLocal = d
+      }
+    }
+
     return {
       id: dbItem.id,
       nome: dbItem.titulo || '',
@@ -50,7 +64,7 @@ export const useSupabaseData = () => {
       produto: dbItem.produto || 'aplicativo',
       subProduto: dbItem.sub_produto || '',
       status: dbItem.status || 'nao_iniciado',
-      dataInicio: dbItem.data_inicio ? new Date(dbItem.data_inicio) : null,
+      dataInicio: dataInicioLocal,
       duracaoMeses,
       okrId: dbItem.okr_id || '',
       subitens,
@@ -66,12 +80,14 @@ export const useSupabaseData = () => {
     const tags = Array.isArray(appItem.subitens) ? [...appItem.subitens] : []
     if (appItem.duracaoMeses) tags.push(`duracao:${appItem.duracaoMeses}`)
 
-    const toIsoDate = (dateLike) => {
+    const toLocalDateString = (dateLike) => {
       if (!dateLike) return null
       const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike
       if (Number.isNaN(d.getTime())) return null
-      // retornar apenas a parte da data para coluna DATE
-      return d.toISOString().slice(0, 10)
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
     }
 
     return {
@@ -82,7 +98,7 @@ export const useSupabaseData = () => {
       sub_produto: appItem.subProduto || null,
       status: appItem.status || 'nao_iniciado',
       prioridade: appItem.prioridade || 'media',
-      data_inicio: toIsoDate(appItem.dataInicio),
+      data_inicio: toLocalDateString(appItem.dataInicio),
       // data_fim poderia ser calculada a partir da duração, mas manteremos null
       data_fim: null,
       responsavel: appItem.responsavel || null,

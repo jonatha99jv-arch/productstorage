@@ -18,7 +18,7 @@ const WEB_SUB_PRODUCTS = [
 
 const ProductTabs = ({ currentProduct, currentSubProduct, onProductChange, onSubProductChange }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Abas de Produtos */}
       <div className="product-tabs">
         <div className="flex space-x-0">

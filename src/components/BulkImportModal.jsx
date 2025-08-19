@@ -14,6 +14,18 @@ const REQUIRED_HEADERS = [
   'Produto'
 ]
 
+// Cabeçalho opcional para Web
+const OPTIONAL_HEADERS = ['Subproduto']
+
+const subProductMap = {
+  'geral': 'geral',
+  'backoffice': 'backoffice',
+  'portal estrela': 'portal_estrela',
+  'portal_estrela': 'portal_estrela',
+  'doctor': 'doctor',
+  'company': 'company',
+}
+
 const statusMap = {
   'Não Iniciado': 'nao_iniciado',
   'Proxima Sprint': 'proxima_sprint',
@@ -76,6 +88,12 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const tese = String(row[idx['Tese de Produto']] || '').trim()
         const statusLabel = String(row[idx['Status']] || '').trim()
         const produto = String(row[idx['Produto']] || '').trim().toLowerCase() || 'aplicativo'
+        const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
+        let subProduto = ''
+        if (produto === 'web') {
+          const key = String(subProdCell || 'geral').trim().toLowerCase()
+          subProduto = subProductMap[key] || 'geral'
+        }
 
         if (!item) {
           setLogs(prev => [...prev, `Linha ${r + 1}: Item vazio`])
@@ -97,7 +115,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           status: statusMap[statusLabel] || 'nao_iniciado',
           okrId: '',
           produto,
-          subProduto: produto === 'web' ? '' : ''
+          subProduto
         }
 
         try {

@@ -26,7 +26,8 @@ function App() {
     updateRoadmapItemStatus,
     saveOKR,
     deleteOKR,
-    reloadData
+    reloadData,
+    deleteRoadmapItemsBulk
   } = useSupabaseData()
 
   const [showOKRManager, setShowOKRManager] = useState(false)

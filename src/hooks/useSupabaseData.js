@@ -362,7 +362,53 @@ export const useSupabaseData = () => {
     updateRoadmapItemStatus,
     saveOKR,
     deleteOKR,
-    reloadData: loadData
+    reloadData: loadData,
+    /**
+     * Upsert por chave natural: titulo + produto + data_inicio
+     * Evita duplicação em importações
+     */
+    upsertRoadmapItemByKey: async (appItem) => {
+      try {
+        const dateStr = (() => {
+          if (!appItem.dataInicio) return null
+          const d = appItem.dataInicio instanceof Date ? appItem.dataInicio : new Date(appItem.dataInicio)
+          if (Number.isNaN(d.getTime())) return null
+          const y = d.getFullYear()
+          const m = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${y}-${m}-${day}`
+        })()
+
+        if (!appItem.nome || !appItem.produto) {
+          throw new Error('Item e Produto são obrigatórios')
+        }
+
+        let existingId = null
+        if (dateStr) {
+          const { data: found, error: findError } = await supabase
+            .from('roadmap_items')
+            .select('id')
+            .eq('titulo', appItem.nome)
+            .eq('produto', appItem.produto)
+            .eq('data_inicio', dateStr)
+            .limit(1)
+
+          if (findError) {
+            console.warn('Falha ao buscar item existente (prosseguindo com insert):', findError)
+          } else if (found && found.length > 0) {
+            existingId = found[0].id
+          }
+        }
+
+        if (existingId) {
+          return await saveRoadmapItem({ ...appItem, id: existingId })
+        }
+        return await saveRoadmapItem({ ...appItem, id: undefined })
+      } catch (e) {
+        console.error('Erro no upsert do item:', e)
+        throw e
+      }
+    }
   }
 }
 

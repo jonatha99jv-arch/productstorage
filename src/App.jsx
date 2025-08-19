@@ -203,7 +203,9 @@ function App() {
                 <Plus className="h-4 w-4" />
                 <span>Novo Item</span>
               </Button>
-              <BulkImportModal onImport={handleSaveItem} />
+              <BulkImportModal onImport={handleSaveItem} onUpsert={async (payload) => {
+                await saveRoadmapItem(payload)
+              }} />
             </div>
           </div>
         </div>

@@ -41,7 +41,7 @@ function normalizeDate(value) {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
-const BulkImportModal = ({ onImport }) => {
+const BulkImportModal = ({ onImport, onUpsert }) => {
   const [open, setOpen] = useState(false)
   const [logs, setLogs] = useState([])
   const [successCount, setSuccessCount] = useState(0)
@@ -83,11 +83,16 @@ const BulkImportModal = ({ onImport }) => {
           continue
         }
 
+        // normalizar duracao (inteiro >=1)
+        const duracaoMeses = String(duracao || '').trim()
+        const duracaoParsed = parseInt(duracaoMeses, 10)
+        const normalizedDuracao = Number.isFinite(duracaoParsed) && duracaoParsed > 0 ? String(duracaoParsed) : ''
+
         const payload = {
           nome: item,
           inputOutputMetric: metric,
           teseProduto: tese,
-          duracaoMeses: duracao,
+          duracaoMeses: normalizedDuracao,
           dataInicio,
           status: statusMap[statusLabel] || 'nao_iniciado',
           okrId: '',
@@ -96,10 +101,13 @@ const BulkImportModal = ({ onImport }) => {
         }
 
         try {
-          // onImport deve lançar se falhar
-          // retorna item salvo para UI
+          // Preferir upsert se fornecido para evitar duplicações
           /* eslint-disable no-await-in-loop */
-          await onImport(payload)
+          if (onUpsert) {
+            await onUpsert(payload)
+          } else {
+            await onImport(payload)
+          }
           setSuccessCount(c => c + 1)
         } catch (e) {
           setLogs(prev => [...prev, `Linha ${r + 1}: ${e.message || 'Erro ao salvar'}`])

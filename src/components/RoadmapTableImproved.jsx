@@ -52,7 +52,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     // normalizar data de início para primeiro dia do mês de início
     const startMonthDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
     // duração em meses inclui o mês de início. Ex.: início Julho + duração 2 => Julho e Agosto
-    const endMonthInclusive = new Date(startMonthDate.getFullYear(), startMonthDate.getMonth() + parseInt(item.duracaoMeses), 0) // último dia do mês final
+    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
+    const endMonthInclusive = new Date(startMonthDate.getFullYear(), startMonthDate.getMonth() + monthsIncluded, 0) // último dia do mês final
 
     const checkMonthStartDate = new Date(year, month - 1, 1)
     const checkMonthEndDate = new Date(year, month, 0)
@@ -132,8 +133,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     if (!item.duracaoMeses || !item.dataInicio) return 0
     
     const startDate = new Date(item.dataInicio)
-    const endDate = new Date(startDate)
-    endDate.setMonth(endDate.getMonth() + parseInt(item.duracaoMeses))
+    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0) // último dia do mês final
     
     const now = new Date()
     const totalDuration = endDate.getTime() - startDate.getTime()
@@ -149,8 +150,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     if (!item.dataInicio || !item.duracaoMeses) return ''
     
     const startDate = new Date(item.dataInicio)
-    const endDate = new Date(startDate)
-    endDate.setMonth(endDate.getMonth() + parseInt(item.duracaoMeses))
+    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0)
     
     const formatDate = (date) => {
       return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })

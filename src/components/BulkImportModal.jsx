@@ -102,9 +102,12 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         }
 
         // normalizar duracao (inteiro >=1)
-        const duracaoMeses = String(duracao || '').trim()
-        const duracaoParsed = parseInt(duracaoMeses, 10)
-        const normalizedDuracao = Number.isFinite(duracaoParsed) && duracaoParsed > 0 ? String(duracaoParsed) : ''
+        let normalizedDuracao = ''
+        if (duracao != null && duracao !== '') {
+          const duracaoStr = String(duracao).trim().replace(',', '.')
+          const duracaoNum = Math.ceil(parseFloat(duracaoStr))
+          if (Number.isFinite(duracaoNum) && duracaoNum > 0) normalizedDuracao = String(duracaoNum)
+        }
 
         const payload = {
           nome: item,

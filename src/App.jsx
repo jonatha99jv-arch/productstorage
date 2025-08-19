@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
-import { Plus, Settings, BarChart3, RefreshCw } from 'lucide-react'
+import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut } from 'lucide-react'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
 import OKRManager from './components/OKRManager'
 import BulkImportModal from './components/BulkImportModal'
@@ -13,6 +13,7 @@ import DatabaseSetup from './components/DatabaseSetup'
 import './App.css'
 import Login from './components/Login'
 import UsersAdmin from './components/UsersAdmin'
+import ProfileEdit from './components/ProfileEdit'
 import { getSession, requireRole, logout } from './lib/auth'
 
 function App() {
@@ -175,8 +176,29 @@ function App() {
     return title
   }
 
+  const [activePage, setActivePage] = useState('roadmap')
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
+      <aside className="hidden sm:block w-64 bg-white border-r p-4 space-y-2">
+        <div className="text-lg font-semibold text-company-dark-blue mb-2">Menu</div>
+        {requireRole('admin') && (
+          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 ${activePage==='users'?'bg-gray-100':''}`}>
+            <Users className="h-4 w-4" />
+            Gerenciar Usuários
+          </button>
+        )}
+        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 ${activePage==='profile'?'bg-gray-100':''}`}>
+          <User className="h-4 w-4" />
+          Edição de Perfil
+        </button>
+        <div className="pt-6" />
+        <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-red-600 mt-auto">
+          <LogOut className="h-4 w-4" />
+          Sair
+        </button>
+      </aside>
+      <div className="flex-1">
       {/* Header */}
       <header className="bg-company-dark-blue shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -235,7 +257,7 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading && (
+        {activePage==='roadmap' && loading && (
           <div className="flex justify-center items-center py-8">
             <div className="flex items-center space-x-2">
               <RefreshCw className="h-5 w-5 animate-spin text-company-dark-blue" />
@@ -244,7 +266,7 @@ function App() {
           </div>
         )}
         
-        {!loading && (
+        {!loading && activePage==='roadmap' && (
           <>
             {/* Abas de Produtos */}
             <ProductTabs
@@ -265,12 +287,15 @@ function App() {
               currentSubProduct={currentSubProduct}
               onDeleteBulk={handleDeleteBulk}
             />
-            {requireRole('admin') && (
+            {activePage==='users' && requireRole('admin') && (
               <div className="mt-6">
                 <UsersAdmin />
               </div>
             )}
           </>
+        )}
+        {activePage==='profile' && (
+          <ProfileEdit />
         )}
       </main>
 

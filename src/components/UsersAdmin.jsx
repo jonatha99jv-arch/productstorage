@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import bcrypt from 'bcryptjs'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 const ROLES = ['viewer','editor','admin']
 
@@ -10,6 +12,8 @@ const UsersAdmin = () => {
   const [error, setError] = useState('')
   const [form, setForm] = useState({ email:'', password:'', role:'viewer'})
   const [search, setSearch] = useState('')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -23,12 +27,14 @@ const UsersAdmin = () => {
 
   const createUser = async () => {
     try {
+      setCreating(true)
       const hash = await bcrypt.hash(form.password, 10)
       const { error } = await supabase.from('users').insert([{ email: form.email, password_hash: hash, role: form.role }])
       if (error) throw error
       setForm({ email:'', password:'', role:'viewer'})
+      setCreateOpen(false)
       await load()
-    } catch (e) { setError(e.message) }
+    } catch (e) { setError(e.message) } finally { setCreating(false) }
   }
 
   const updateUser = async (id, updates) => {
@@ -55,14 +61,38 @@ const UsersAdmin = () => {
     <div className="bg-white p-4 border rounded-lg">
       <h2 className="text-lg font-semibold mb-3">Gerenciar Usuários</h2>
       {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-4">
-        <input className="border rounded px-2 py-1" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
-        <input className="border rounded px-2 py-1" placeholder="Senha" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} />
-        <select className="border rounded px-2 py-1" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
-          {ROLES.map(r=> <option key={r} value={r}>{r}</option>)}
-        </select>
-        <button className="bg-company-orange text-white rounded px-3" onClick={createUser}>Criar</button>
-        <input className="border rounded px-2 py-1 sm:col-span-2" placeholder="Buscar por email" value={search} onChange={e=>setSearch(e.target.value)} />
+      <div className="flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center">
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-company-orange text-white">Criar Usuário</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Novo Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">Email</label>
+                <input className="w-full border rounded px-2 py-1" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} type="email" placeholder="email@dominio.com" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Senha</label>
+                <input className="w-full border rounded px-2 py-1" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type="password" placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Perfil</label>
+                <select className="w-full border rounded px-2 py-1" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
+                  {ROLES.map(r=> <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={()=>setCreateOpen(false)}>Cancelar</Button>
+                <Button onClick={createUser} disabled={creating} className="bg-company-orange text-white">{creating?'Criando...':'Criar'}</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <input className="border rounded px-2 py-1 sm:ml-auto" placeholder="Buscar por email" value={search} onChange={e=>setSearch(e.target.value)} />
       </div>
       {loading ? 'Carregando...' : (
         <table className="w-full text-sm">

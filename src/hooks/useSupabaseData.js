@@ -12,6 +12,42 @@ export const useSupabaseData = () => {
     loadData()
   }, [])
 
+  // Normalização de texto (remove acentos, lowercase, trim)
+  const normalizeText = (value) => {
+    if (!value) return ''
+    return String(value)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+  }
+
+  // Normalização para produtos (ids canônicos usados na UI)
+  const normalizeProduct = (value) => {
+    const key = normalizeText(value)
+    switch (key) {
+      case 'aplicativo':
+      case 'web':
+      case 'parcerias':
+      case 'ai':
+      case 'automacao': // cobre "automação" -> "automacao"
+        return key
+      default:
+        return 'aplicativo'
+    }
+  }
+
+  // Normalização de subprodutos Web
+  const normalizeSubProduct = (value) => {
+    const key = normalizeText(value)
+    if (key === 'portal estrela' || key === 'portal_estrela') return 'portal_estrela'
+    if (key === 'backoffice') return 'backoffice'
+    if (key === 'doctor') return 'doctor'
+    if (key === 'company') return 'company'
+    if (key === 'geral') return 'geral'
+    return ''
+  }
+
   const mapDbToApp = (dbItem) => {
     // Descompactar descricao caso esteja em JSON com campos adicionais
     let inputOutputMetric = ''
@@ -61,8 +97,8 @@ export const useSupabaseData = () => {
       nome: dbItem.titulo || '',
       inputOutputMetric,
       teseProduto,
-      produto: dbItem.produto || 'aplicativo',
-      subProduto: dbItem.sub_produto || '',
+      produto: normalizeProduct(dbItem.produto || 'aplicativo'),
+      subProduto: normalizeSubProduct(dbItem.sub_produto || ''),
       status: dbItem.status || 'nao_iniciado',
       dataInicio: dataInicioLocal,
       duracaoMeses,
@@ -90,12 +126,15 @@ export const useSupabaseData = () => {
       return `${y}-${m}-${day}`
     }
 
+    const produtoNormalizado = normalizeProduct(appItem.produto || 'aplicativo')
+    const subProdutoNormalizado = produtoNormalizado === 'web' ? normalizeSubProduct(appItem.subProduto || '') : null
+
     return {
       // id é autogerado no insert; em update não enviar id no payload
       titulo: appItem.nome || '',
       descricao,
-      produto: appItem.produto || 'aplicativo',
-      sub_produto: appItem.subProduto || null,
+      produto: produtoNormalizado,
+      sub_produto: subProdutoNormalizado,
       status: appItem.status || 'nao_iniciado',
       prioridade: appItem.prioridade || 'media',
       data_inicio: toLocalDateString(appItem.dataInicio),

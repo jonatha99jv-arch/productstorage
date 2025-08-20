@@ -26,6 +26,20 @@ const subProductMap = {
   'company': 'company',
 }
 
+const normalizeText = (value) => {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+const normalizeProduct = (value) => {
+  const key = normalizeText(value)
+  if (['aplicativo','web','parcerias','ai','automacao'].includes(key)) return key
+  return 'aplicativo'
+}
+
 const statusMap = {
   'Não Iniciado': 'nao_iniciado',
   'Proxima Sprint': 'proxima_sprint',
@@ -87,11 +101,11 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const metric = String(row[idx['Input/Output Metric']] || '').trim()
         const tese = String(row[idx['Tese de Produto']] || '').trim()
         const statusLabel = String(row[idx['Status']] || '').trim()
-        const produto = String(row[idx['Produto']] || '').trim().toLowerCase() || 'aplicativo'
+        const produto = normalizeProduct(row[idx['Produto']])
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
         let subProduto = ''
         if (produto === 'web') {
-          const key = String(subProdCell || 'geral').trim().toLowerCase()
+          const key = normalizeText(subProdCell || 'geral')
           subProduto = subProductMap[key] || 'geral'
         }
 

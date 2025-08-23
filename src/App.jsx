@@ -226,56 +226,108 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className={`hidden sm:flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 space-y-2 transition-all duration-200`}>
-        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+      <aside className={`hidden sm:flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 transition-all duration-200 overflow-y-auto`}>
+        {/* Header do Menu */}
+        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 mb-4`}>
           <span className="inline-block shrink-0" style={{width:20,height:20,background:'#FF9015',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Menu</span>
         </button>
-        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
-          <Target className="h-5 w-5 text-white shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
-        </button>
-        <button onClick={()=>setActivePage('career')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='career'?'bg-white/10':''}`}>
-          <TrendingUp className="h-5 w-5 text-white shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Carreira</span>
-        </button>
-        <button onClick={()=>setActivePage('performance')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='performance'?'bg-white/10':''}`}>
-          <BarChart3 className="h-5 w-5 text-white shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Performance</span>
-        </button>
-        {session && requireRole('admin') && (
-          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
-            <Users className="h-5 w-5 shrink-0" />
-            <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
+
+        <div className="flex-1 space-y-1">
+          {/* Seção Administrador */}
+          {session && requireRole('admin') && (
+            <div className="mb-6">
+              <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+                <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                  Administrador
+                </div>
+                {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+              </div>
+              <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
+                <Users className="h-5 w-5 shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
+              </button>
+            </div>
+          )}
+
+          {/* Seção Produto */}
+          <div className="mb-6">
+            <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+              <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Produto
+              </div>
+              {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+            </div>
+            <div className="space-y-1">
+              <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
+                <Target className="h-5 w-5 text-white shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
+              </button>
+              {canEdit && (
+                <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+                  <BarChart3 className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
+                </button>
+              )}
+              {canEdit && (
+                <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+                  <Settings className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Seção Times */}
+          <div className="mb-6">
+            <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+              <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Times
+              </div>
+              {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+            </div>
+            <div className="space-y-1">
+              <button onClick={()=>setActivePage('performance')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='performance'?'bg-white/10':''}`}>
+                <BarChart3 className="h-5 w-5 text-white shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Performance</span>
+              </button>
+              {canEdit && (
+                <button onClick={()=>setActivePage('metrics-admin')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='metrics-admin'?'bg-white/10':''}`}>
+                  <Settings className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Métricas</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Seção Pessoal */}
+          <div className="mb-6">
+            <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+              <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Pessoal
+              </div>
+              {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+            </div>
+            <div className="space-y-1">
+              <button onClick={()=>setActivePage('career')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='career'?'bg-white/10':''}`}>
+                <TrendingUp className="h-5 w-5 text-white shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Carreira</span>
+              </button>
+              <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
+                <User className="h-5 w-5 shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout no final */}
+        <div className="pt-4 border-t border-white/10">
+          <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-red-200">
+            <LogOut className="h-5 w-5 shrink-0" />
+            <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
           </button>
-        )}
-        {canEdit && (
-        <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
-          <BarChart3 className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
-        </button>
-        )}
-        {canEdit && (
-        <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
-          <Settings className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
-        </button>
-        )}
-        {canEdit && (
-        <button onClick={()=>setActivePage('metrics-admin')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='metrics-admin'?'bg-white/10':''}`}>
-          <Settings className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Métricas</span>
-        </button>
-        )}
-        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
-          <User className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
-        </button>
-        <div className="pt-6" />
-        <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-red-200 mt-auto">
-          <LogOut className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
-        </button>
+        </div>
       </aside>
       <div className="flex-1">
       {/* Header */}

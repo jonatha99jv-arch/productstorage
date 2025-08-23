@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
-import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target } from 'lucide-react'
+import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, TrendingUp } from 'lucide-react'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
 import OKRManager from './components/OKRManager'
 import BulkImportModal from './components/BulkImportModal'
@@ -10,15 +10,28 @@ import OKRProgress from './components/OKRProgress'
 import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
 import DatabaseSetup from './components/DatabaseSetup'
+import { YCareerDiagram } from './components/YCareerDiagram'
+import { mockUser } from './data/careerData'
 import './App.css'
 import Login from './components/Login'
 import UsersAdmin from './components/UsersAdmin'
 import ProfileEdit from './components/ProfileEdit'
-import { getSession, requireRole, logout } from './lib/auth'
+import { getSession, requireRole, logout, isMockMode } from './lib/auth'
 
 function App() {
+  // ✅ TODOS OS HOOKS DEVEM VIR PRIMEIRO - NUNCA APÓS RETURNS CONDICIONAIS
   const [showDatabaseSetup, setShowDatabaseSetup] = useState(false)
   const [databaseReady, setDatabaseReady] = useState(false)
+  const [session, setSession] = useState(null)
+  const [sessionLoading, setSessionLoading] = useState(true)
+  const [showOKRManager, setShowOKRManager] = useState(false)
+  const [showOKRProgress, setShowOKRProgress] = useState(false)
+  const [showItemModal, setShowItemModal] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
+  const [currentProduct, setCurrentProduct] = useState('aplicativo')
+  const [currentSubProduct, setCurrentSubProduct] = useState('')
+  const [activePage, setActivePage] = useState('roadmap')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   
   const {
     roadmapItems,
@@ -34,19 +47,32 @@ function App() {
     deleteRoadmapItemsBulk
   } = useSupabaseData()
 
-  const [showOKRManager, setShowOKRManager] = useState(false)
-  const [showOKRProgress, setShowOKRProgress] = useState(false)
-  const [showItemModal, setShowItemModal] = useState(false)
-  const [editingItem, setEditingItem] = useState(null)
-  const [currentProduct, setCurrentProduct] = useState('aplicativo')
-  const [currentSubProduct, setCurrentSubProduct] = useState('')
+  // Verificar sessão do usuário
+  useEffect(() => {
+    const checkSession = () => {
+      const currentSession = getSession()
+      setSession(currentSession)
+      setSessionLoading(false)
+    }
+    
+    checkSession()
+  }, [])
 
   // Verificar se o banco de dados está configurado
   useEffect(() => {
-    checkDatabaseSetup()
-  }, [])
+    if (session) {
+      checkDatabaseSetup()
+    }
+  }, [session])
 
   const checkDatabaseSetup = async () => {
+    if (isMockMode()) {
+      // Em modo mock, não precisa verificar banco - já está "pronto"
+      console.log('🎭 Modo mock ativo - pulando verificação de banco')
+      setDatabaseReady(true)
+      return
+    }
+    
     try {
       // Tentar fazer uma consulta simples para verificar se as tabelas existem
       const { error: okrError } = await supabase
@@ -82,9 +108,26 @@ function App() {
     setDatabaseReady(true)
   }
 
-  const session = getSession()
+  // Loading da sessão
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-company-dark-blue mb-4">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto" />
+          </div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Se não houver sessão, mostrar login
   if (!session) {
-    return <Login onSuccess={() => window.location.reload()} />
+    return <Login onSuccess={(newSession) => {
+      setSession(newSession)
+      setSessionLoading(false)
+    }} />
   }
 
   // Se precisar configurar o banco, mostrar tela de configuração
@@ -177,10 +220,7 @@ function App() {
     return title
   }
 
-  const [activePage, setActivePage] = useState('roadmap')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  const canEdit = requireRole('editor')
+  const canEdit = session && requireRole('editor')
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -193,7 +233,11 @@ function App() {
           <Target className="h-5 w-5 text-white shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
         </button>
-        {requireRole('admin') && (
+        <button onClick={()=>setActivePage('career')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='career'?'bg-white/10':''}`}>
+          <TrendingUp className="h-5 w-5 text-white shrink-0" />
+          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Carreira</span>
+        </button>
+        {session && requireRole('admin') && (
           <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
             <Users className="h-5 w-5 shrink-0" />
             <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
@@ -230,6 +274,9 @@ function App() {
               {activePage==='roadmap' && (
                 <>Roadmap Interativo - {getPageTitle()}</>
               )}
+              {activePage==='career' && (
+                <>Trilha de Carreira</>
+              )}
               {activePage==='users' && (
                 <>Gerenciar Usuários</>
               )}
@@ -241,6 +288,12 @@ function App() {
               )}
             </h1>
             <div className="flex space-x-3">
+              {isMockMode() && (
+                <div className="text-blue-200 text-sm bg-blue-600 px-3 py-1 rounded flex items-center gap-2">
+                  <span>🎭</span>
+                  <span>Modo Desenvolvimento</span>
+                </div>
+              )}
               {error && (
                 <div className="text-red-300 text-sm bg-red-600 px-3 py-1 rounded">
                   Erro: {error}
@@ -311,7 +364,12 @@ function App() {
             />
           </>
         )}
-        {activePage==='users' && requireRole('admin') && (
+        {activePage==='career' && (
+          <div className="bg-white rounded-lg shadow-sm">
+            <YCareerDiagram user={mockUser} />
+          </div>
+        )}
+        {activePage==='users' && session && requireRole('admin') && (
           <UsersAdmin />
         )}
         {activePage==='okrs' && (

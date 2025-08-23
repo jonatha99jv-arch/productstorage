@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { login, ensureDefaultAdmin } from '@/lib/auth'
+import { login, ensureDefaultAdmin, isMockMode } from '@/lib/auth'
 
 const Login = ({ onSuccess }) => {
   const [email, setEmail] = useState('')
@@ -31,6 +31,16 @@ const Login = ({ onSuccess }) => {
             <span className="text-4xl font-semibold tracking-tight" style={{color:'#1D1830'}}>Starbem</span>
             <span className="inline-block" style={{width:32,height:32,background:'linear-gradient(135deg,#FF9015,#FF1F76)',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}}/>
           </div>
+          {isMockMode() && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+              <div className="text-sm font-medium text-blue-800 mb-2">🎭 Modo Desenvolvimento</div>
+              <div className="text-xs text-blue-600 space-y-1">
+                <div><strong>admin@starbem.com</strong> / admin123</div>
+                <div><strong>editor@starbem.com</strong> / editor123</div>
+                <div><strong>dev@starbem.com</strong> / dev123</div>
+              </div>
+            </div>
+          )}
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>

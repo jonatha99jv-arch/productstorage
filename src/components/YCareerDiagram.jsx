@@ -152,33 +152,34 @@ export const YCareerDiagram = ({ user }) => {
             </div>
           </div>
 
-          {/* Linhas de Conexão */}
+          {/* Linhas de Conexão mais sutis */}
           <svg 
-            className="absolute pointer-events-none" 
+            className="absolute pointer-events-none z-0" 
             style={{ 
-              top: '200px', 
+              top: '170px', 
               left: '50%', 
               transform: 'translateX(-50%)', 
-              width: '300px', 
-              height: '120px',
-              zIndex: 0
+              width: '320px', 
+              height: '140px'
             }}
           >
             {/* Staff Engineer para Senior */}
             <path 
-              d="M 75 0 Q 120 60 150 100" 
-              stroke="rgb(59, 130, 246)" 
+              d="M 80 20 Q 120 60 160 100" 
+              stroke="#60A5FA" 
               strokeWidth="2"
               fill="none"
-              opacity="0.6"
+              opacity="0.4"
+              strokeDasharray="5,5"
             />
             {/* Tech Manager para Senior */}
             <path 
-              d="M 225 0 Q 180 60 150 100" 
-              stroke="rgb(16, 185, 129)" 
+              d="M 240 20 Q 200 60 160 100" 
+              stroke="#10B981" 
               strokeWidth="2"
               fill="none"
-              opacity="0.6"
+              opacity="0.4"
+              strokeDasharray="5,5"
             />
           </svg>
 
@@ -188,12 +189,18 @@ export const YCareerDiagram = ({ user }) => {
             <div className="text-center">
               {renderCareerNode(seniorLevel)}
               <div className="mt-2 text-sm text-gray-500">Tech Lead</div>
+              
+              {/* Linha vertical para Pleno */}
+              <div className="w-px h-12 bg-gray-300 mx-auto mt-6 opacity-40"></div>
             </div>
             
             {/* Pleno */}
             <div className="text-center">
               {renderCareerNode(plenoLevel)}
               <div className="mt-2 text-sm text-gray-500">Desenvolvedor Pleno</div>
+              
+              {/* Linha vertical para Junior */}
+              <div className="w-px h-12 bg-gray-300 mx-auto mt-6 opacity-40"></div>
             </div>
             
             {/* Junior */}

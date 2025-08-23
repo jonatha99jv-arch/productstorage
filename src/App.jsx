@@ -365,9 +365,7 @@ function App() {
           </>
         )}
         {activePage==='career' && (
-          <div className="bg-white rounded-lg shadow-sm">
-            <YCareerDiagram user={mockUser} />
-          </div>
+          <YCareerDiagram user={mockUser} />
         )}
         {activePage==='users' && session && requireRole('admin') && (
           <UsersAdmin />

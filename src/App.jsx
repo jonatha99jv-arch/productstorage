@@ -11,6 +11,8 @@ import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
 import DatabaseSetup from './components/DatabaseSetup'
 import { YCareerDiagram } from './components/YCareerDiagram'
+import { PerformanceDashboard } from './components/PerformanceDashboard'
+import { MetricsAdmin } from './components/MetricsAdmin'
 import { mockUser } from './data/careerData'
 import './App.css'
 import Login from './components/Login'
@@ -237,6 +239,10 @@ function App() {
           <TrendingUp className="h-5 w-5 text-white shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Carreira</span>
         </button>
+        <button onClick={()=>setActivePage('performance')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='performance'?'bg-white/10':''}`}>
+          <BarChart3 className="h-5 w-5 text-white shrink-0" />
+          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Performance</span>
+        </button>
         {session && requireRole('admin') && (
           <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
             <Users className="h-5 w-5 shrink-0" />
@@ -253,6 +259,12 @@ function App() {
         <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
           <Settings className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
+        </button>
+        )}
+        {canEdit && (
+        <button onClick={()=>setActivePage('metrics-admin')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='metrics-admin'?'bg-white/10':''}`}>
+          <Settings className="h-5 w-5 shrink-0" />
+          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Métricas</span>
         </button>
         )}
         <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
@@ -276,6 +288,12 @@ function App() {
               )}
               {activePage==='career' && (
                 <>Trilha de Carreira</>
+              )}
+              {activePage==='performance' && (
+                <>Dashboard de Performance</>
+              )}
+              {activePage==='metrics-admin' && (
+                <>Gerenciar Métricas</>
               )}
               {activePage==='users' && (
                 <>Gerenciar Usuários</>
@@ -366,6 +384,16 @@ function App() {
         )}
         {activePage==='career' && (
           <YCareerDiagram user={mockUser} />
+        )}
+        {activePage==='performance' && (
+          <div className="bg-white rounded-lg shadow-sm">
+            <PerformanceDashboard user={mockUser} />
+          </div>
+        )}
+        {activePage==='metrics-admin' && canEdit && (
+          <div className="bg-white rounded-lg shadow-sm">
+            <MetricsAdmin user={mockUser} />
+          </div>
         )}
         {activePage==='users' && session && requireRole('admin') && (
           <UsersAdmin />

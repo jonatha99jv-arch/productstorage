@@ -136,12 +136,13 @@
   text-align: center;
   font-size: 0.75rem;
   font-weight: 500;
-  width: 44px;
+  width: 40px;
+  white-space: nowrap;
 }
 
 .roadmap-table .month-cell {
-  width: 44px;
-  height: 48px;
+  width: 40px;
+  height: 44px;
   padding: 2px;
   position: relative;
 }

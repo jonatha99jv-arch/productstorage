@@ -45,7 +45,8 @@
   --status-next-sprint: #ff9f43;
   --status-current-sprint: #ffc048;
   --status-finalizing: #a8e6cf;
-  --status-completed: #26d0ce;
+  /* Verde militar mais escuro para 'Concluída' */
+  --status-completed: #16A34A;
 }
 
 .dark {

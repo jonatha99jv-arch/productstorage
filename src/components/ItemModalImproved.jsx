@@ -30,6 +30,11 @@ const WEB_SUB_PRODUCTS = [
   { value: 'company', label: 'Company' }
 ]
 
+const APP_SUB_PRODUCTS = [
+  { value: 'brasil', label: 'Brasil' },
+  { value: 'global', label: 'Global' }
+]
+
 const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     id: null,
@@ -152,7 +157,9 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
               value={formData.produto}
               onChange={(e) => {
                 handleInputChange('produto', e.target.value)
-                if (e.target.value !== 'web') {
+                if (e.target.value === 'web' || e.target.value === 'aplicativo') {
+                  handleInputChange('subProduto', '')
+                } else {
                   handleInputChange('subProduto', '')
                 }
               }}
@@ -167,10 +174,10 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             </select>
           </div>
 
-          {/* Sub-produto (apenas para Web) */}
-          {formData.produto === 'web' && (
+          {/* Sub-produto (Web e Aplicativo) */}
+          {(formData.produto === 'web' || formData.produto === 'aplicativo') && (
             <div>
-              <Label htmlFor="subProduto">Sub-produto Web</Label>
+              <Label htmlFor="subProduto">Sub-produto</Label>
               <select
                 id="subProduto"
                 value={formData.subProduto}
@@ -178,7 +185,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
                 className="w-full p-2 border border-gray-300 rounded-md"
               >
                 <option value="">Geral</option>
-                {WEB_SUB_PRODUCTS.map(option => (
+                {(formData.produto === 'web' ? WEB_SUB_PRODUCTS : APP_SUB_PRODUCTS).map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

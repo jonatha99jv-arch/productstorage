@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Edit, Trash2, Search, Calendar } from 'lucide-react'
@@ -69,6 +70,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState([])
+  const [previewItem, setPreviewItem] = useState(null)
 
   // Função para verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
@@ -194,6 +196,20 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return `${formatDate(startDate)} - ${formatDate(endDate)}`
   }
 
+  const getEndDate = (item) => {
+    if (!item?.dataInicio || !item?.duracaoMeses) return null
+    const startDate = new Date(item.dataInicio)
+    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
+    return new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0)
+  }
+
+  const formatFullDate = (dateLike) => {
+    if (!dateLike) return ''
+    const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
   const currentQuarter = QUARTERS[selectedQuarter]
   const currentYear = new Date().getFullYear()
   const filteredItems = getFilteredAndSortedItems()
@@ -313,24 +329,15 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   )}
                   <td className="item-cell">
                     <div className="space-y-2">
-                      <div className="font-semibold text-company-dark-blue">
+                      <button type="button" className="block font-semibold text-company-dark-blue text-left hover:text-company-orange transition-colors" onClick={() => setPreviewItem(item)}>
                         {item.nome}
-                      </div>
+                      </button>
                       {item.subProduto && item.subProduto !== 'geral' && (
-                        <div className={`text-xs text-white px-2 py-1 rounded inline-block ${SUBPRODUCT_COLORS[item.subProduto] || 'bg-gray-600'}`}>
+                        <div className={`mt-1 text-xs text-white px-2 py-1 rounded inline-block ${SUBPRODUCT_COLORS[item.subProduto] || 'bg-gray-600'}`}>
                           {formatSubProductLabel(item.subProduto)}
                         </div>
                       )}
-                      {item.subitens && item.subitens.length > 0 && (
-                        <div className="text-sm text-gray-600">
-                          <div className="font-medium">Subitens:</div>
-                          <ul className="list-disc list-inside space-y-1">
-                            {item.subitens.map((subitem, index) => (
-                              <li key={index} className="text-xs">{subitem}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {/* Subitens removidos da coluna Item conforme solicitado */}
                       {item.duracaoMeses && item.dataInicio && (
                         <div className="space-y-1">
                           <div className="text-xs text-gray-500 flex items-center space-x-1">
@@ -431,6 +438,83 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           <p><strong>Período:</strong> Itens são exibidos apenas se estiverem ativos no trimestre selecionado</p>
         </div>
       </div>
+
+      {/* Visualização do Item (somente leitura) */}
+      <Dialog open={!!previewItem} onOpenChange={(open) => { if (!open) setPreviewItem(null) }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-company-dark-blue">{previewItem?.nome || 'Item'}</DialogTitle>
+            <DialogDescription>Detalhes do item selecionado</DialogDescription>
+          </DialogHeader>
+          {previewItem && (
+            <div className="max-h-[70vh] overflow-y-auto pr-1">
+              <div className="space-y-4">
+              {(previewItem.subProduto && previewItem.subProduto !== 'geral') && (
+                <div className={`inline-block text-xs text-white px-2 py-1 rounded ${SUBPRODUCT_COLORS[previewItem.subProduto] || 'bg-gray-600'}`}>
+                  {formatSubProductLabel(previewItem.subProduto)}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">Data de início</div>
+                  <div className="text-sm font-medium">{formatFullDate(previewItem.dataInicio)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Data de fim</div>
+                  <div className="text-sm font-medium">{formatFullDate(getEndDate(previewItem)) || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Duração</div>
+                  <div className="text-sm font-medium">{previewItem.duracaoMeses ? `${previewItem.duracaoMeses} ${Number(previewItem.duracaoMeses) === 1 ? 'mês' : 'meses'}` : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">OKR</div>
+                  <div className="text-sm font-medium">{previewItem.okrId ? (okrs.find(o => o.id === previewItem.okrId)?.objetivo || previewItem.okrId) : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Status</div>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <span className={`inline-block w-3 h-3 rounded ${STATUS_CONFIG[previewItem.status]?.className || ''}`}></span>
+                    {STATUS_CONFIG[previewItem.status]?.label || previewItem.status}
+                  </div>
+                </div>
+              </div>
+
+              {previewItem.subitens && previewItem.subitens.length > 0 && (
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Subitens</div>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {previewItem.subitens.map((si, i) => (
+                      <li key={i}>{si}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(previewItem.duracaoMeses && previewItem.dataInicio) && (
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Progresso</div>
+                  <div className="duration-progress">
+                    <div className="duration-progress-fill" style={{ width: `${calculateDurationProgress(previewItem)}%` }}></div>
+                    <div className="duration-progress-text">{calculateDurationProgress(previewItem)}%</div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Métrica Input/Output</div>
+                <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.inputOutputMetric || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Tese de Produto</div>
+                <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.teseProduto || '-'}</div>
+              </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

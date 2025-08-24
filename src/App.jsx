@@ -39,7 +39,7 @@ function App() {
   const [showItemModal, setShowItemModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [currentProduct, setCurrentProduct] = useState('aplicativo')
-  const [currentSubProduct, setCurrentSubProduct] = useState('')
+  const [currentSubProduct, setCurrentSubProduct] = useState('geral')
 
   // Verificar se o banco de dados está configurado
   useEffect(() => {
@@ -148,9 +148,9 @@ function App() {
     return roadmapItems.filter(item => {
       const matchesProduct = item.produto === currentProduct
       
-      if (currentProduct === 'web') {
-        // Em 'Geral', mostrar todos os subprodutos (backoffice, portal_estrela, doctor, company) e itens sem subProduto
-        if (currentSubProduct === 'geral') {
+      if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+        // Em 'Geral', mostrar todos os subprodutos e itens sem subProduto
+        if (!currentSubProduct || currentSubProduct === 'geral') {
           return matchesProduct
         }
         // Nas demais abas, filtrar pelo subproduto selecionado
@@ -164,12 +164,14 @@ function App() {
   const getPageTitle = () => {
     let title = currentProduct.charAt(0).toUpperCase() + currentProduct.slice(1)
     
-    if (currentProduct === 'web' && currentSubProduct && currentSubProduct !== 'geral') {
+    if ((currentProduct === 'web' || currentProduct === 'aplicativo') && currentSubProduct && currentSubProduct !== 'geral') {
       const subProductLabels = {
         'backoffice': 'Backoffice',
         'portal_estrela': 'Portal Estrela',
         'doctor': 'Doctor',
-        'company': 'Company'
+        'company': 'Company',
+        'brasil': 'Brasil',
+        'global': 'Global'
       }
       title += ` - ${subProductLabels[currentSubProduct] || currentSubProduct}`
     }

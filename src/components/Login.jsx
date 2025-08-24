@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { login, ensureDefaultAdmin } from '@/lib/auth'
 
 const Login = ({ onSuccess }) => {
@@ -6,6 +7,7 @@ const Login = ({ onSuccess }) => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -36,8 +38,11 @@ const Login = ({ onSuccess }) => {
           <div>
             <input type="email" placeholder="Email" className="w-full border rounded px-3 py-2" value={email} onChange={e=>setEmail(e.target.value)} required />
           </div>
-          <div>
-            <input type="password" placeholder="Password" className="w-full border rounded px-3 py-2" value={password} onChange={e=>setPassword(e.target.value)} required />
+          <div className="relative">
+            <input type={showPassword ? 'text' : 'password'} placeholder="Password" className="w-full border rounded px-3 py-2 pr-10" value={password} onChange={e=>setPassword(e.target.value)} required />
+            <button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" onClick={()=>setShowPassword(v=>!v)}>
+              {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+            </button>
           </div>
           {error && <div className="text-sm text-red-600">{error}</div>}
           <button type="submit" disabled={loading} className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded py-2">{loading ? 'Entrando...' : 'Entrar'}</button>

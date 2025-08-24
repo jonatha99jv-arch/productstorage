@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Plus, X } from 'lucide-react'
+import { CalendarIcon, Plus, X, ChevronDown } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'nao_iniciado', label: 'Não Iniciado' },
@@ -152,45 +152,51 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           {/* Produto */}
           <div className="space-y-1.5">
             <Label htmlFor="produto">Produto *</Label>
-            <select
-              id="produto"
-              value={formData.produto}
-              onChange={(e) => {
-                handleInputChange('produto', e.target.value)
-                if (e.target.value === 'web' || e.target.value === 'aplicativo') {
-                  handleInputChange('subProduto', '')
-                } else {
-                  handleInputChange('subProduto', '')
-                }
-              }}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            >
+            <div className="relative">
+              <select
+                id="produto"
+                value={formData.produto}
+                onChange={(e) => {
+                  handleInputChange('produto', e.target.value)
+                  if (e.target.value === 'web' || e.target.value === 'aplicativo') {
+                    handleInputChange('subProduto', '')
+                  } else {
+                    handleInputChange('subProduto', '')
+                  }
+                }}
+                className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
+                required
+              >
               {PRODUCT_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
-            </select>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            </div>
           </div>
 
           {/* Sub-produto (Web e Aplicativo) */}
           {(formData.produto === 'web' || formData.produto === 'aplicativo') && (
             <div>
               <Label htmlFor="subProduto">Sub-produto</Label>
-              <select
-                id="subProduto"
-                value={formData.subProduto}
-                onChange={(e) => handleInputChange('subProduto', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Geral</option>
-                {(formData.produto === 'web' ? WEB_SUB_PRODUCTS : APP_SUB_PRODUCTS).map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="subProduto"
+                  value={formData.subProduto}
+                  onChange={(e) => handleInputChange('subProduto', e.target.value)}
+                  className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
+                >
+                  <option value="">Geral</option>
+                  {(formData.produto === 'web' ? WEB_SUB_PRODUCTS : APP_SUB_PRODUCTS).map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              </div>
             </div>
           )}
 
@@ -300,36 +306,42 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           {/* Status */}
           <div className="space-y-1.5">
             <Label htmlFor="status">Status</Label>
-            <select
-              id="status"
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            >
-              {STATUS_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="status"
+                value={formData.status}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
+              >
+                {STATUS_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            </div>
           </div>
 
           {/* OKR Vinculado */}
           <div className="space-y-1.5">
             <Label htmlFor="okr">OKR Vinculado</Label>
-            <select
-              id="okr"
-              value={formData.okrId}
-              onChange={(e) => handleInputChange('okrId', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            >
-              <option value="">Nenhum OKR</option>
-              {okrs.map(okr => (
-                <option key={okr.id} value={okr.id}>
-                  {okr.objetivo}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="okr"
+                value={formData.okrId}
+                onChange={(e) => handleInputChange('okrId', e.target.value)}
+                className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
+              >
+                <option value="">Nenhum OKR</option>
+                {okrs.map(okr => (
+                  <option key={okr.id} value={okr.id}>
+                    {okr.objetivo}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            </div>
           </div>
 
           {/* Botões */}

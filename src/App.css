@@ -119,7 +119,7 @@
 
 .roadmap-table .item-cell {
   min-width: 200px;
-  max-width: 300px;
+  max-width: 320px;
   word-wrap: break-word;
 }
 
@@ -136,14 +136,21 @@
   text-align: center;
   font-size: 0.875rem;
   font-weight: 500;
-  width: 80px;
+  width: 56px;
 }
 
 .roadmap-table .month-cell {
-  width: 80px;
+  width: 56px;
   height: 60px;
   padding: 4px;
   position: relative;
+}
+
+/* Colunas específicas para ampliar espaço das descrições */
+.roadmap-table .metric-cell,
+.roadmap-table .tese-cell {
+  min-width: 240px;
+  max-width: 480px;
 }
 
 /* Status visual - quadrados coloridos sem texto */

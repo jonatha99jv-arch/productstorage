@@ -225,8 +225,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 {currentQuarter.label}
               </th>
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
-              <th rowSpan="2" className="merged-header item-cell">Input/Output Metric</th>
-              <th rowSpan="2" className="merged-header item-cell">Tese de Produto</th>
+              <th rowSpan="2" className="merged-header item-cell metric-cell">Input/Output Metric</th>
+              <th rowSpan="2" className="merged-header item-cell tese-cell">Tese de Produto</th>
               {canEdit && (
                 <th rowSpan="2" className="merged-header w-24">Ações</th>
               )}

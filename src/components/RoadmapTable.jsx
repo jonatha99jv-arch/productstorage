@@ -110,14 +110,14 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
                 {currentQuarter.label}
               </th>
               <th className="item-cell">OKR</th>
-              <th className="item-cell">Input/Output Metric</th>
-              <th className="item-cell">Tese de Produto</th>
+              <th className="item-cell metric-cell">Input/Output Metric</th>
+              <th className="item-cell tese-cell">Tese de Produto</th>
               <th className="w-24">Ações</th>
             </tr>
             <tr>
               <th></th>
               {currentQuarter.months.map(month => (
-                <th key={month} className="month-header w-24">
+                <th key={month} className="month-header">
                   {month}
                 </th>
               ))}

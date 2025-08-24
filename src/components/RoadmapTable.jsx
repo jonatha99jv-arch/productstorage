@@ -65,6 +65,17 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
   }
 
   const currentQuarter = QUARTERS[selectedQuarter]
+  const quarterKeys = Object.keys(QUARTERS)
+  const goPrevQuarter = () => {
+    const idx = quarterKeys.indexOf(selectedQuarter)
+    const prev = idx <= 0 ? quarterKeys[quarterKeys.length - 1] : quarterKeys[idx - 1]
+    setSelectedQuarter(prev)
+  }
+  const goNextQuarter = () => {
+    const idx = quarterKeys.indexOf(selectedQuarter)
+    const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
+    setSelectedQuarter(next)
+  }
 
   return (
     <div className="space-y-6">
@@ -103,11 +114,23 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
       {/* Tabela do Roadmap */}
       <div className="overflow-x-auto border rounded-lg">
         <table className="roadmap-table">
+          <colgroup>
+            <col className="col-item" />
+            <col className="col-month" />
+            <col className="col-month" />
+            <col className="col-month" />
+            <col className="col-okr" />
+            <col className="col-metric" />
+            <col className="col-tese" />
+            <col className="col-actions" />
+          </colgroup>
           <thead>
             <tr>
-              <th className="item-cell">Item</th>
+              <th className="item-cell item-name-cell">Item</th>
               <th className="quarter-header" colSpan="3">
+                <button type="button" className="quarter-arrow left" aria-label="Trimestre anterior" onClick={goPrevQuarter} />
                 {currentQuarter.label}
+                <button type="button" className="quarter-arrow right" aria-label="Próximo trimestre" onClick={goNextQuarter} />
               </th>
               <th className="item-cell">OKR</th>
               <th className="item-cell metric-cell">Input/Output Metric</th>

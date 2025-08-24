@@ -166,6 +166,18 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   const currentYear = new Date().getFullYear()
   const filteredItems = getFilteredAndSortedItems()
 
+  const quarterKeys = Object.keys(QUARTERS)
+  const goPrevQuarter = () => {
+    const idx = quarterKeys.indexOf(selectedQuarter)
+    const prev = idx <= 0 ? quarterKeys[quarterKeys.length - 1] : quarterKeys[idx - 1]
+    setSelectedQuarter(prev)
+  }
+  const goNextQuarter = () => {
+    const idx = quarterKeys.indexOf(selectedQuarter)
+    const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
+    setSelectedQuarter(next)
+  }
+
   return (
     <div className="space-y-6">
       {/* Controles */}
@@ -213,6 +225,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       {/* Tabela do Roadmap */}
       <div className="overflow-x-auto border rounded-lg">
         <table className="roadmap-table">
+          <colgroup>
+            {canEdit && <col className="col-select" />}
+            <col className="col-item" />
+            <col className="col-month" />
+            <col className="col-month" />
+            <col className="col-month" />
+            <col className="col-okr" />
+            <col className="col-metric" />
+            <col className="col-tese" />
+            {canEdit && <col className="col-actions" />}
+          </colgroup>
           <thead>
             <tr>
               {canEdit && (
@@ -220,9 +243,11 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   <input type="checkbox" aria-label="Selecionar todos" onChange={(e) => { if (e.target.checked) setSelectedIds(filteredItems.map(i => i.id)); else setSelectedIds([]) }} checked={selectedIds.length > 0 && selectedIds.length === filteredItems.length} />
                 </th>
               )}
-              <th rowSpan="2" className="merged-header item-cell">Item</th>
+              <th rowSpan="2" className="merged-header item-cell item-name-cell">Item</th>
               <th colSpan="3" className="merged-header quarter-header">
+                <button type="button" className="quarter-arrow left" aria-label="Trimestre anterior" onClick={goPrevQuarter} />
                 {currentQuarter.label}
+                <button type="button" className="quarter-arrow right" aria-label="Próximo trimestre" onClick={goNextQuarter} />
               </th>
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
               <th rowSpan="2" className="merged-header item-cell metric-cell">Input/Output Metric</th>

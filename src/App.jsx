@@ -213,34 +213,34 @@ function App() {
             <img src="/starbem-star-white.png" alt="Starbem" className="block h-6 w-6 object-contain" onError={(e)=>{ e.currentTarget.outerHTML = '<span style=\"display:inline-block;width:20px;height:20px;background:#FFFFFF;clip-path:polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)\"></span>' }} />
           )}
         </button>
-        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
+        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
           <Target className="h-5 w-5 text-white shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
         </button>
         {requireRole('admin') && (
-          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
+          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
             <Users className="h-5 w-5 shrink-0" />
             <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
           </button>
         )}
         {canEdit && (
-        <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+        <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
           <BarChart3 className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
         </button>
         )}
         {canEdit && (
-        <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+        <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
           <Settings className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
         </button>
         )}
-        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
+        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
           <User className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
         </button>
         <div className="pt-6" />
-        <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-red-200 mt-auto">
+        <button onClick={()=>{ logout(); window.location.reload() }} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 text-red-200 mt-auto`}>
           <LogOut className="h-5 w-5 shrink-0" />
           <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
         </button>

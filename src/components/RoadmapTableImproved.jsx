@@ -404,8 +404,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   </td>
                   
                   {canEdit && (
-                    <td className="text-center">
-                      <div className="flex space-x-1 justify-center">
+                    <td className="text-center actions-cell">
+                      <div className="flex space-x-1 justify-center items-center">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="h-8 w-8 p-0 hover:bg-blue-100">
                           <Edit className="h-4 w-4" />
                         </Button>

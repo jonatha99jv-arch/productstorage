@@ -39,6 +39,32 @@ const STATUS_CONFIG = {
   }
 }
 
+const SUBPRODUCT_LABELS = {
+  'portal_estrela': 'Portal Estrela',
+  'backoffice': 'Backoffice',
+  'doctor': 'Doctor',
+  'company': 'Company',
+  'brasil': 'Brasil',
+  'global': 'Global',
+  'geral': 'Geral',
+}
+
+const SUBPRODUCT_COLORS = {
+  'portal_estrela': 'bg-emerald-600',
+  'backoffice': 'bg-indigo-600',
+  'doctor': 'bg-sky-600',
+  'company': 'bg-purple-600',
+  'brasil': 'bg-green-600',
+  'global': 'bg-blue-600',
+  'geral': 'bg-gray-600',
+}
+
+const formatSubProductLabel = (value) => {
+  if (!value) return ''
+  if (SUBPRODUCT_LABELS[value]) return SUBPRODUCT_LABELS[value]
+  return String(value).replaceAll('_', ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+}
+
 const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
@@ -98,16 +124,22 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.inputOutputMetric.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.teseProduto.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const matchesProduct = !currentProduct || item.produto === currentProduct
-      const matchesSubProduct = (currentProduct === 'web' && currentSubProduct === 'geral')
-        ? true
-        : (!currentSubProduct || item.subProduto === currentSubProduct)
+      const matchesSubProduct = (() => {
+        if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+          // Em Geral (ou sem seleção), mostrar todos os subprodutos e também itens sem subProduto
+          if (!currentSubProduct || currentSubProduct === 'geral') return true
+          return item.subProduto === currentSubProduct
+        }
+        return true
+      })()
+
       const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter)
-      
+
       return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter
     })
-    
+
     return sortItems(filtered)
   }
 
@@ -284,9 +316,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                       <div className="font-semibold text-company-dark-blue">
                         {item.nome}
                       </div>
-                      {item.subProduto && (
-                        <div className="text-xs bg-company-orange text-white px-2 py-1 rounded inline-block">
-                          {item.subProduto}
+                      {item.subProduto && item.subProduto !== 'geral' && (
+                        <div className={`text-xs text-white px-2 py-1 rounded inline-block ${SUBPRODUCT_COLORS[item.subProduto] || 'bg-gray-600'}`}>
+                          {formatSubProductLabel(item.subProduto)}
                         </div>
                       )}
                       {item.subitens && item.subitens.length > 0 && (

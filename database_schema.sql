@@ -71,9 +71,37 @@ CREATE TRIGGER update_okrs_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
+-- Tabela para armazenar solicitações dos usuários
+CREATE TABLE IF NOT EXISTS solicitacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID,
+    nome_solicitante VARCHAR(255) NOT NULL,
+    email_solicitante VARCHAR(255) NOT NULL,
+    departamento VARCHAR(255),
+    produto VARCHAR(100) NOT NULL,
+    sub_produto VARCHAR(100),
+    titulo VARCHAR(255) NOT NULL,
+    descricao TEXT,
+    retorno_esperado TEXT,
+    file_url TEXT,
+    file_name TEXT,
+    file_type TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_solicitacoes_produto ON solicitacoes(produto);
+CREATE INDEX IF NOT EXISTS idx_solicitacoes_user ON solicitacoes(user_id);
+
+CREATE TRIGGER update_solicitacoes_updated_at 
+    BEFORE UPDATE ON solicitacoes
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
 -- Políticas de segurança RLS (Row Level Security)
 ALTER TABLE roadmap_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE okrs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE solicitacoes ENABLE ROW LEVEL SECURITY;
 
 -- Permitir todas as operações para usuários autenticados (você pode ajustar conforme necessário)
 CREATE POLICY "Permitir todas as operações para roadmap_items" ON roadmap_items
@@ -81,6 +109,17 @@ CREATE POLICY "Permitir todas as operações para roadmap_items" ON roadmap_item
 
 CREATE POLICY "Permitir todas as operações para okrs" ON okrs
     FOR ALL USING (true);
+
+-- Políticas explícitas para todos os verbos (inclui WITH CHECK para INSERT/UPDATE)
+DROP POLICY IF EXISTS "Permitir todas as operações para solicitacoes" ON solicitacoes;
+CREATE POLICY solicitacoes_select ON solicitacoes
+  FOR SELECT USING (true);
+CREATE POLICY solicitacoes_insert ON solicitacoes
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY solicitacoes_update ON solicitacoes
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY solicitacoes_delete ON solicitacoes
+  FOR DELETE USING (true);
 
 -- Comentários para documentação
 COMMENT ON TABLE roadmap_items IS 'Tabela para armazenar os itens do roadmap de produtos';
@@ -90,3 +129,4 @@ COMMENT ON COLUMN roadmap_items.sub_produto IS 'Sub-produto para categorização
 COMMENT ON COLUMN roadmap_items.status IS 'Status do item: planejado, em_andamento, concluido, cancelado';
 COMMENT ON COLUMN roadmap_items.prioridade IS 'Prioridade: baixa, media, alta, critica';
 COMMENT ON COLUMN okrs.progresso IS 'Progresso do OKR em porcentagem (0-100)';
+COMMENT ON TABLE solicitacoes IS 'Solicitações de mudança/feature dos usuários';

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
-import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, TrendingUp } from 'lucide-react'
+import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, FileText, TrendingUp } from 'lucide-react'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
 import OKRManager from './components/OKRManager'
 import BulkImportModal from './components/BulkImportModal'
@@ -18,6 +18,7 @@ import './App.css'
 import Login from './components/Login'
 import UsersAdmin from './components/UsersAdmin'
 import ProfileEdit from './components/ProfileEdit'
+import RequestsPage from './components/RequestsPage'
 import { getSession, requireRole, logout, isMockMode } from './lib/auth'
 
 function App() {
@@ -38,6 +39,8 @@ function App() {
   const {
     roadmapItems,
     okrs,
+    solicitacoes,
+    minhasSolicitacoes,
     loading,
     error,
     saveRoadmapItem,
@@ -46,7 +49,8 @@ function App() {
     saveOKR,
     deleteOKR,
     reloadData,
-    deleteRoadmapItemsBulk
+    deleteRoadmapItemsBulk,
+    createSolicitacao,
   } = useSupabaseData()
 
   // Estados adicionais para logo
@@ -204,7 +208,7 @@ function App() {
           return matchesProduct
         }
         // Nas demais abas, filtrar pelo subproduto selecionado
-        return matchesProduct && item.subProduto === currentSubProduct
+          return matchesProduct && item.subProduto === currentSubProduct
       }
       
       return matchesProduct
@@ -289,6 +293,10 @@ function App() {
               <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
                 <Target className="h-5 w-5 text-white shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
+              </button>
+              <button onClick={()=>setActivePage('requests')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='requests'?'bg-white/10':''}`}>
+                <FileText className="h-5 w-5 shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Solicitações</span>
               </button>
               {canEdit && (
                 <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
@@ -383,6 +391,9 @@ function App() {
               {activePage==='okrs' && (
                 <>Gerenciar OKRs</>
               )}
+              {activePage==='requests' && (
+                <>Solicitações</>
+              )}
             </h1>
             <div className="flex space-x-3">
               {isMockMode() && (
@@ -408,13 +419,13 @@ function App() {
               {/* Progresso OKRs movido para menu lateral */}
               {/* removido Sair do header como solicitado */}
               {canEdit && (
-                <Button
-                  onClick={handleAddItem}
-                  className="flex items-center space-x-2 bg-company-orange hover:bg-company-red-orange text-white"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Novo Item</span>
-                </Button>
+              <Button
+                onClick={handleAddItem}
+                className="flex items-center space-x-2 bg-company-orange hover:bg-company-red-orange text-white"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Novo Item</span>
+              </Button>
               )}
               {canEdit && (
                 <BulkImportModal onImport={handleSaveItem} onUpsert={async (payload) => {
@@ -485,6 +496,20 @@ function App() {
             onDeleteOKR={handleDeleteOKR}
             onClose={() => setActivePage('roadmap')}
             asPage={true}
+          />
+        )}
+        {activePage==='requests' && (
+          <RequestsPage
+            solicitacoes={solicitacoes}
+            minhasSolicitacoes={minhasSolicitacoes}
+            produtos={[ 'aplicativo','web','parcerias','ai','automacao' ]}
+            subProdutos={{
+              web: ['geral','backoffice','portal_estrela','doctor','company'],
+              aplicativo: ['geral','brasil','global']
+            }}
+            onCreate={async (payload, file) => {
+              await createSolicitacao(payload, file)
+            }}
           />
         )}
         {activePage==='profile' && (

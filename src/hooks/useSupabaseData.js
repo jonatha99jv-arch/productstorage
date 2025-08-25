@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { isMockMode } from '../lib/auth'
+import { isMockMode, getSession } from '../lib/auth'
 
 // Dados mock para desenvolvimento local
 const mockRoadmapItems = [
@@ -73,12 +73,15 @@ const mockOKRs = [
 export const useSupabaseData = () => {
   const [roadmapItems, setRoadmapItems] = useState([])
   const [okrs, setOkrs] = useState([])
+  const [solicitacoes, setSolicitacoes] = useState([])
+  const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   // Carregar dados do Supabase na inicialização
   useEffect(() => {
     loadData()
+    loadSolicitacoes()
   }, [])
 
   // Normalização de texto (remove acentos, lowercase, trim)
@@ -313,6 +316,96 @@ export const useSupabaseData = () => {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  /** Solicitações **/
+  const loadSolicitacoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('solicitacoes')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Erro ao carregar solicitações:', error)
+        setSolicitacoes([])
+        setMinhasSolicitacoes([])
+        return
+      }
+
+      const session = getSession()
+      const all = Array.isArray(data) ? data : []
+      setSolicitacoes(all)
+      if (session?.id) {
+        setMinhasSolicitacoes(all.filter(s => s.user_id === session.id))
+      } else if (session?.email) {
+        setMinhasSolicitacoes(all.filter(s => s.email_solicitante === session.email))
+      } else {
+        setMinhasSolicitacoes([])
+      }
+    } catch (err) {
+      console.error('Erro geral ao carregar solicitações:', err)
+      setSolicitacoes([])
+      setMinhasSolicitacoes([])
+    }
+  }
+
+  const uploadSolicitacaoFile = async (file, userId) => {
+    if (!file) return { file_url: null, file_name: null, file_type: null }
+    try {
+      const bucket = 'solicitacoes'
+      const ext = file.name.split('.').pop()
+      const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+      const path = `${userId || 'anon'}/${Date.now()}_${safeName}`
+      const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type || undefined,
+      })
+      if (upErr) {
+        console.warn('Falha no upload (seguindo sem arquivo):', upErr)
+        return { file_url: null, file_name: null, file_type: null }
+      }
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path)
+      return { file_url: pub?.publicUrl || null, file_name: file.name, file_type: file.type || ext }
+    } catch (e) {
+      console.warn('Erro no upload (seguindo sem arquivo):', e)
+      return { file_url: null, file_name: null, file_type: null }
+    }
+  }
+
+  const createSolicitacao = async (payload, file) => {
+    try {
+      const session = getSession()
+      const userId = session?.id || null
+      const fileMeta = await uploadSolicitacaoFile(file, userId)
+      const toDb = {
+        user_id: userId,
+        nome_solicitante: payload.nomeSolicitante || '',
+        email_solicitante: payload.emailSolicitante || '',
+        departamento: payload.departamento || '',
+        produto: normalizeProduct(payload.produto || 'aplicativo'),
+        sub_produto: (payload.produto === 'web' || payload.produto === 'aplicativo') ? normalizeSubProduct(payload.subProduto || '') : null,
+        titulo: payload.titulo || '',
+        descricao: payload.descricao || '',
+        retorno_esperado: payload.retornoEsperado || '',
+        file_url: fileMeta.file_url,
+        file_name: fileMeta.file_name,
+        file_type: fileMeta.file_type,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const { data, error } = await supabase
+        .from('solicitacoes')
+        .insert([toDb])
+        .select()
+      if (error) throw error
+      await loadSolicitacoes()
+      return data?.[0] || null
+    } catch (err) {
+      console.error('Erro ao criar solicitação:', err)
+      throw err
     }
   }
 
@@ -596,6 +689,8 @@ export const useSupabaseData = () => {
   return {
     roadmapItems,
     okrs,
+    solicitacoes,
+    minhasSolicitacoes,
     loading,
     error,
     saveRoadmapItem,
@@ -605,6 +700,8 @@ export const useSupabaseData = () => {
     saveOKR,
     deleteOKR,
     reloadData: loadData,
+    loadSolicitacoes,
+    createSolicitacao,
     /**
      * Upsert por chave natural: titulo + produto + data_inicio
      * Evita duplicação em importações

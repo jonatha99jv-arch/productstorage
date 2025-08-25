@@ -16,6 +16,12 @@ const WEB_SUB_PRODUCTS = [
   { id: 'company', label: 'Company' }
 ]
 
+const APP_SUB_PRODUCTS = [
+  { id: 'geral', label: 'Geral' },
+  { id: 'brasil', label: 'Brasil' },
+  { id: 'global', label: 'Global' }
+]
+
 const ProductTabs = ({ currentProduct, currentSubProduct, onProductChange, onSubProductChange }) => {
   return (
     <div className="space-y-6">
@@ -27,10 +33,10 @@ const ProductTabs = ({ currentProduct, currentSubProduct, onProductChange, onSub
               key={product.id}
               onClick={() => {
                 onProductChange(product.id)
-                if (product.id !== 'web') {
-                  onSubProductChange('')
-                } else {
+                if (product.id === 'web' || product.id === 'aplicativo') {
                   onSubProductChange('geral')
+                } else {
+                  onSubProductChange('')
                 }
               }}
               className={`product-tab ${currentProduct === product.id ? 'active' : ''}`}
@@ -46,6 +52,23 @@ const ProductTabs = ({ currentProduct, currentSubProduct, onProductChange, onSub
         <div className="sub-product-tabs">
           <div className="flex flex-wrap gap-2">
             {WEB_SUB_PRODUCTS.map(subProduct => (
+              <button
+                key={subProduct.id}
+                onClick={() => onSubProductChange(subProduct.id)}
+                className={`sub-product-tab ${currentSubProduct === subProduct.id ? 'active' : ''}`}
+              >
+                {subProduct.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sub-abas para Aplicativo */}
+      {currentProduct === 'aplicativo' && (
+        <div className="sub-product-tabs">
+          <div className="flex flex-wrap gap-2">
+            {APP_SUB_PRODUCTS.map(subProduct => (
               <button
                 key={subProduct.id}
                 onClick={() => onSubProductChange(subProduct.id)}

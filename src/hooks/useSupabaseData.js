@@ -106,13 +106,15 @@ export const useSupabaseData = () => {
     }
   }
 
-  // Normalização de subprodutos Web
+  // Normalização de subprodutos Web/Aplicativo
   const normalizeSubProduct = (value) => {
     const key = normalizeText(value)
     if (key === 'portal estrela' || key === 'portal_estrela') return 'portal_estrela'
     if (key === 'backoffice') return 'backoffice'
     if (key === 'doctor') return 'doctor'
     if (key === 'company') return 'company'
+    if (key === 'brasil') return 'brasil'
+    if (key === 'global') return 'global'
     if (key === 'geral') return 'geral'
     return ''
   }
@@ -196,7 +198,9 @@ export const useSupabaseData = () => {
     }
 
     const produtoNormalizado = normalizeProduct(appItem.produto || 'aplicativo')
-    const subProdutoNormalizado = produtoNormalizado === 'web' ? normalizeSubProduct(appItem.subProduto || '') : null
+    const subProdutoNormalizado = (produtoNormalizado === 'web' || produtoNormalizado === 'aplicativo')
+      ? normalizeSubProduct(appItem.subProduto || '')
+      : null
 
     return {
       // id é autogerado no insert; em update não enviar id no payload

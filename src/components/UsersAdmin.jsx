@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import bcrypt from 'bcryptjs'
 import { Button } from '@/components/ui/button'
+import { Eye, EyeOff } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 const ROLES = ['viewer','editor','admin']
@@ -14,6 +15,7 @@ const UsersAdmin = () => {
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [showCreatePassword, setShowCreatePassword] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -77,7 +79,12 @@ const UsersAdmin = () => {
               </div>
               <div>
                 <label className="block text-sm mb-1">Senha</label>
-                <input className="w-full border rounded px-2 py-1" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type="password" placeholder="••••••••" autoComplete="new-password" />
+                <div className="relative">
+                  <input className="w-full border rounded px-2 py-1 pr-8" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type={showCreatePassword ? 'text' : 'password'} placeholder="••••••••" autoComplete="new-password" />
+                  <button type="button" aria-label={showCreatePassword ? 'Ocultar senha' : 'Mostrar senha'} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" onClick={()=>setShowCreatePassword(v=>!v)}>
+                    {showCreatePassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm mb-1">Perfil</label>
@@ -120,8 +127,17 @@ const UsersAdmin = () => {
                     if (email) updateUser(u.id,{ email })
                   }}>Trocar email</button>
                   <button className="px-2 py-1 border rounded" onClick={()=>{
-                    const password = prompt('Nova senha')
-                    if (password) updateUser(u.id,{ password })
+                    const wrapper = document.createElement('div')
+                    const input = document.createElement('input')
+                    input.type = 'password'
+                    input.placeholder = 'Nova senha'
+                    input.className = 'border rounded px-2 py-1'
+                    wrapper.appendChild(input)
+                    const ok = window.confirm('Deseja definir uma nova senha? Após confirmar, usaremos o valor digitado no prompt anterior.')
+                    if (ok) {
+                      const pwd = prompt('Digite a nova senha')
+                      if (pwd) updateUser(u.id,{ password: pwd })
+                    }
                   }}>Trocar senha</button>
                   <button className="px-2 py-1 border rounded text-red-600" onClick={()=>deleteUser(u.id)}>Excluir</button>
                 </td>

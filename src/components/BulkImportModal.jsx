@@ -24,6 +24,8 @@ const subProductMap = {
   'portal_estrela': 'portal_estrela',
   'doctor': 'doctor',
   'company': 'company',
+  'brasil': 'brasil',
+  'global': 'global',
 }
 
 const normalizeText = (value) => {
@@ -104,9 +106,9 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const produto = normalizeProduct(row[idx['Produto']])
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
         let subProduto = ''
-        if (produto === 'web') {
+        if (produto === 'web' || produto === 'aplicativo') {
           const key = normalizeText(subProdCell || 'geral')
-          subProduto = subProductMap[key] || 'geral'
+          subProduto = subProductMap[key] || ''
         }
 
         if (!item) {

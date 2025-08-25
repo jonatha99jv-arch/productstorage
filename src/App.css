@@ -45,7 +45,8 @@
   --status-next-sprint: #ff9f43;
   --status-current-sprint: #ffc048;
   --status-finalizing: #a8e6cf;
-  --status-completed: #26d0ce;
+  /* Verde militar mais escuro para 'Concluída' */
+  --status-completed: #16A34A;
 }
 
 .dark {
@@ -99,6 +100,11 @@
   vertical-align: top;
 }
 
+/* Centralizar verticalmente conteúdo da coluna de Ações */
+.roadmap-table .actions-cell {
+  vertical-align: middle;
+}
+
 .roadmap-table th {
   background-color: var(--company-dark-blue);
   color: white;
@@ -118,8 +124,8 @@
 }
 
 .roadmap-table .item-cell {
-  min-width: 200px;
-  max-width: 300px;
+  min-width: 260px;
+  max-width: 560px;
   word-wrap: break-word;
 }
 
@@ -128,22 +134,49 @@
   color: white;
   text-align: center;
   font-weight: bold;
+  padding: 4px 0;
+  font-size: 1rem;
+  position: relative;
 }
 
 .roadmap-table .month-header {
   background-color: #f8fafc;
   color: var(--company-dark-blue);
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 0.675rem;
   font-weight: 500;
-  width: 80px;
+  width: 44px;
+  white-space: nowrap;
+  padding: 2px;
 }
 
 .roadmap-table .month-cell {
-  width: 80px;
-  height: 60px;
-  padding: 4px;
+  width: 44px;
+  height: 40px;
+  padding: 2px;
   position: relative;
+}
+
+/* Larguras fixas via colgroup (garante meses realmente estreitos) */
+.roadmap-table col.col-select { width: 32px; }
+.roadmap-table col.col-item { width: 30%; }
+.roadmap-table col.col-month { width: 44px !important; }
+.roadmap-table col.col-okr { width: 140px; }
+.roadmap-table col.col-metric { width: 30%; }
+.roadmap-table col.col-tese { width: 35%; }
+.roadmap-table col.col-actions { width: 96px; }
+
+/* Colunas específicas para ampliar espaço das descrições */
+.roadmap-table .metric-cell,
+.roadmap-table .tese-cell {
+  min-width: 320px;
+  max-width: 680px;
+}
+
+/* Coluna do Item com largura maior */
+.roadmap-table .item-name-cell {
+  min-width: 300px;
+  max-width: 720px;
 }
 
 /* Status visual - quadrados coloridos sem texto */
@@ -156,11 +189,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 32px;
 }
 
 .status-visual:hover {
   opacity: 0.8;
+}
+
+/* Setas de navegação no cabeçalho do trimestre */
+.quarter-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.quarter-arrow.left {
+  left: 8px;
+  border-right: 10px solid #ffffff;
+}
+
+.quarter-arrow.right {
+  right: 8px;
+  border-left: 10px solid #ffffff;
+}
+
+.quarter-arrow:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
 }
 
 /* Status colors */

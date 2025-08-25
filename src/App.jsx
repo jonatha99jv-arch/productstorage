@@ -49,6 +49,11 @@ function App() {
     deleteRoadmapItemsBulk
   } = useSupabaseData()
 
+  // Estados adicionais para logo
+  const [logoOk, setLogoOk] = useState(true)
+  const [logoSrc, setLogoSrc] = useState('/starbem-logo-white.png')
+  const [logoTriedFallback, setLogoTriedFallback] = useState(false)
+
   // Verificar sessão do usuário
   useEffect(() => {
     const checkSession = () => {
@@ -193,9 +198,9 @@ function App() {
     return roadmapItems.filter(item => {
       const matchesProduct = item.produto === currentProduct
       
-      if (currentProduct === 'web') {
-        // Em 'Geral', mostrar todos os subprodutos (backoffice, portal_estrela, doctor, company) e itens sem subProduto
-        if (currentSubProduct === 'geral') {
+      if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+        // Em 'Geral', mostrar todos os subprodutos e itens sem subProduto
+        if (!currentSubProduct || currentSubProduct === 'geral') {
           return matchesProduct
         }
         // Nas demais abas, filtrar pelo subproduto selecionado
@@ -209,12 +214,14 @@ function App() {
   const getPageTitle = () => {
     let title = currentProduct.charAt(0).toUpperCase() + currentProduct.slice(1)
     
-    if (currentProduct === 'web' && currentSubProduct && currentSubProduct !== 'geral') {
+    if ((currentProduct === 'web' || currentProduct === 'aplicativo') && currentSubProduct && currentSubProduct !== 'geral') {
       const subProductLabels = {
         'backoffice': 'Backoffice',
         'portal_estrela': 'Portal Estrela',
         'doctor': 'Doctor',
-        'company': 'Company'
+        'company': 'Company',
+        'brasil': 'Brasil',
+        'global': 'Global'
       }
       title += ` - ${subProductLabels[currentSubProduct] || currentSubProduct}`
     }
@@ -226,11 +233,31 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className={`hidden sm:flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 transition-all duration-200 overflow-y-auto`}>
-        {/* Header do Menu */}
-        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 mb-4`}>
-          <span className="inline-block shrink-0" style={{width:20,height:20,background:'#FF9015',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Menu</span>
+
+      <aside className={`hidden sm:flex sticky top-0 h-screen shrink-0 overflow-y-auto flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 transition-all duration-200`}>
+        {/* Header do Menu com Logo */}
+        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center justify-center ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 mb-4`}>
+          {sidebarOpen ? (
+            logoOk ? (
+              <img
+                src={logoSrc}
+                alt="Starbem"
+                className="block h-6 w-auto object-contain"
+                onError={() => {
+                  if (!logoTriedFallback) {
+                    setLogoSrc('/starbem-logo.png')
+                    setLogoTriedFallback(true)
+                  } else {
+                    setLogoOk(false)
+                  }
+                }}
+              />
+            ) : (
+              <span className="inline-block" style={{width:20,height:20,background:'#FFFFFF',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
+            )
+          ) : (
+            <img src="/starbem-star-white.png" alt="Starbem" className="block h-6 w-6 object-contain" onError={(e)=>{ e.currentTarget.outerHTML = '<span style="display:inline-block;width:20px;height:20px;background:#FFFFFF;clip-path:polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)"></span>' }} />
+          )}
         </button>
 
         <div className="flex-1 space-y-1">
@@ -243,7 +270,7 @@ function App() {
                 </div>
                 {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
               </div>
-              <button onClick={()=>setActivePage('users')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
+              <button onClick={()=>setActivePage('users')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
                 <Users className="h-5 w-5 shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
               </button>
@@ -259,18 +286,18 @@ function App() {
               {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
             </div>
             <div className="space-y-1">
-              <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
+              <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
                 <Target className="h-5 w-5 text-white shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
               </button>
               {canEdit && (
-                <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+                <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
                   <BarChart3 className="h-5 w-5 shrink-0" />
                   <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
                 </button>
               )}
               {canEdit && (
-                <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+                <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
                   <Settings className="h-5 w-5 shrink-0" />
                   <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
                 </button>
@@ -287,12 +314,12 @@ function App() {
               {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
             </div>
             <div className="space-y-1">
-              <button onClick={()=>setActivePage('performance')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='performance'?'bg-white/10':''}`}>
+              <button onClick={()=>setActivePage('performance')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='performance'?'bg-white/10':''}`}>
                 <BarChart3 className="h-5 w-5 text-white shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Performance</span>
               </button>
               {canEdit && (
-                <button onClick={()=>setActivePage('metrics-admin')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='metrics-admin'?'bg-white/10':''}`}>
+                <button onClick={()=>setActivePage('metrics-admin')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='metrics-admin'?'bg-white/10':''}`}>
                   <Settings className="h-5 w-5 shrink-0" />
                   <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Métricas</span>
                 </button>
@@ -309,11 +336,11 @@ function App() {
               {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
             </div>
             <div className="space-y-1">
-              <button onClick={()=>setActivePage('career')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='career'?'bg-white/10':''}`}>
+              <button onClick={()=>setActivePage('career')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='career'?'bg-white/10':''}`}>
                 <TrendingUp className="h-5 w-5 text-white shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Carreira</span>
               </button>
-              <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center gap-2 ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
+              <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
                 <User className="h-5 w-5 shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
               </button>
@@ -323,7 +350,7 @@ function App() {
 
         {/* Logout no final */}
         <div className="pt-4 border-t border-white/10">
-          <button onClick={()=>{ logout(); window.location.reload() }} className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-red-200">
+          <button onClick={()=>{ logout(); window.location.reload() }} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 text-red-200`}>
             <LogOut className="h-5 w-5 shrink-0" />
             <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
           </button>

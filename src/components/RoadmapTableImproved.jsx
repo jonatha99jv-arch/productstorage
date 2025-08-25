@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Edit, Trash2, Search, Calendar } from 'lucide-react'
@@ -39,10 +40,37 @@ const STATUS_CONFIG = {
   }
 }
 
+const SUBPRODUCT_LABELS = {
+  'portal_estrela': 'Portal Estrela',
+  'backoffice': 'Backoffice',
+  'doctor': 'Doctor',
+  'company': 'Company',
+  'brasil': 'Brasil',
+  'global': 'Global',
+  'geral': 'Geral',
+}
+
+const SUBPRODUCT_COLORS = {
+  'portal_estrela': 'bg-emerald-600',
+  'backoffice': 'bg-indigo-600',
+  'doctor': 'bg-sky-600',
+  'company': 'bg-purple-600',
+  'brasil': 'bg-green-600',
+  'global': 'bg-blue-600',
+  'geral': 'bg-gray-600',
+}
+
+const formatSubProductLabel = (value) => {
+  if (!value) return ''
+  if (SUBPRODUCT_LABELS[value]) return SUBPRODUCT_LABELS[value]
+  return String(value).replaceAll('_', ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+}
+
 const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState([])
+  const [previewItem, setPreviewItem] = useState(null)
 
   // Função para verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
@@ -98,16 +126,22 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.inputOutputMetric.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.teseProduto.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const matchesProduct = !currentProduct || item.produto === currentProduct
-      const matchesSubProduct = (currentProduct === 'web' && currentSubProduct === 'geral')
-        ? true
-        : (!currentSubProduct || item.subProduto === currentSubProduct)
+      const matchesSubProduct = (() => {
+        if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+          // Em Geral (ou sem seleção), mostrar todos os subprodutos e também itens sem subProduto
+          if (!currentSubProduct || currentSubProduct === 'geral') return true
+          return item.subProduto === currentSubProduct
+        }
+        return true
+      })()
+
       const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter)
-      
+
       return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter
     })
-    
+
     return sortItems(filtered)
   }
 
@@ -162,9 +196,35 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return `${formatDate(startDate)} - ${formatDate(endDate)}`
   }
 
+  const getEndDate = (item) => {
+    if (!item?.dataInicio || !item?.duracaoMeses) return null
+    const startDate = new Date(item.dataInicio)
+    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
+    return new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0)
+  }
+
+  const formatFullDate = (dateLike) => {
+    if (!dateLike) return ''
+    const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
   const currentQuarter = QUARTERS[selectedQuarter]
   const currentYear = new Date().getFullYear()
   const filteredItems = getFilteredAndSortedItems()
+
+  const quarterKeys = Object.keys(QUARTERS)
+  const goPrevQuarter = () => {
+    const idx = quarterKeys.indexOf(selectedQuarter)
+    const prev = idx <= 0 ? quarterKeys[quarterKeys.length - 1] : quarterKeys[idx - 1]
+    setSelectedQuarter(prev)
+  }
+  const goNextQuarter = () => {
+    const idx = quarterKeys.indexOf(selectedQuarter)
+    const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
+    setSelectedQuarter(next)
+  }
 
   return (
     <div className="space-y-6">
@@ -213,6 +273,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       {/* Tabela do Roadmap */}
       <div className="overflow-x-auto border rounded-lg">
         <table className="roadmap-table">
+          <colgroup>
+            {canEdit && <col className="col-select" />}
+            <col className="col-item" />
+            <col className="col-month" />
+            <col className="col-month" />
+            <col className="col-month" />
+            <col className="col-okr" />
+            <col className="col-metric" />
+            <col className="col-tese" />
+            {canEdit && <col className="col-actions" />}
+          </colgroup>
           <thead>
             <tr>
               {canEdit && (
@@ -220,13 +291,15 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   <input type="checkbox" aria-label="Selecionar todos" onChange={(e) => { if (e.target.checked) setSelectedIds(filteredItems.map(i => i.id)); else setSelectedIds([]) }} checked={selectedIds.length > 0 && selectedIds.length === filteredItems.length} />
                 </th>
               )}
-              <th rowSpan="2" className="merged-header item-cell">Item</th>
+              <th rowSpan="2" className="merged-header item-cell item-name-cell">Item</th>
               <th colSpan="3" className="merged-header quarter-header">
+                <button type="button" className="quarter-arrow left" aria-label="Trimestre anterior" onClick={goPrevQuarter} />
                 {currentQuarter.label}
+                <button type="button" className="quarter-arrow right" aria-label="Próximo trimestre" onClick={goNextQuarter} />
               </th>
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
-              <th rowSpan="2" className="merged-header item-cell">Input/Output Metric</th>
-              <th rowSpan="2" className="merged-header item-cell">Tese de Produto</th>
+              <th rowSpan="2" className="merged-header item-cell metric-cell">Input/Output Metric</th>
+              <th rowSpan="2" className="merged-header item-cell tese-cell">Tese de Produto</th>
               {canEdit && (
                 <th rowSpan="2" className="merged-header w-24">Ações</th>
               )}
@@ -256,24 +329,15 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   )}
                   <td className="item-cell">
                     <div className="space-y-2">
-                      <div className="font-semibold text-company-dark-blue">
+                      <button type="button" className="block font-semibold text-company-dark-blue text-left hover:text-company-orange transition-colors" onClick={() => setPreviewItem(item)}>
                         {item.nome}
-                      </div>
-                      {item.subProduto && (
-                        <div className="text-xs bg-company-orange text-white px-2 py-1 rounded inline-block">
-                          {item.subProduto}
+                      </button>
+                      {item.subProduto && item.subProduto !== 'geral' && (
+                        <div className={`mt-1 text-xs text-white px-2 py-1 rounded inline-block ${SUBPRODUCT_COLORS[item.subProduto] || 'bg-gray-600'}`}>
+                          {formatSubProductLabel(item.subProduto)}
                         </div>
                       )}
-                      {item.subitens && item.subitens.length > 0 && (
-                        <div className="text-sm text-gray-600">
-                          <div className="font-medium">Subitens:</div>
-                          <ul className="list-disc list-inside space-y-1">
-                            {item.subitens.map((subitem, index) => (
-                              <li key={index} className="text-xs">{subitem}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {/* Subitens removidos da coluna Item conforme solicitado */}
                       {item.duracaoMeses && item.dataInicio && (
                         <div className="space-y-1">
                           <div className="text-xs text-gray-500 flex items-center space-x-1">
@@ -340,8 +404,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   </td>
                   
                   {canEdit && (
-                    <td className="text-center">
-                      <div className="flex space-x-1 justify-center">
+                    <td className="text-center actions-cell">
+                      <div className="flex space-x-1 justify-center items-center">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="h-8 w-8 p-0 hover:bg-blue-100">
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -374,6 +438,83 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           <p><strong>Período:</strong> Itens são exibidos apenas se estiverem ativos no trimestre selecionado</p>
         </div>
       </div>
+
+      {/* Visualização do Item (somente leitura) */}
+      <Dialog open={!!previewItem} onOpenChange={(open) => { if (!open) setPreviewItem(null) }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-company-dark-blue">{previewItem?.nome || 'Item'}</DialogTitle>
+            <DialogDescription>Detalhes do item selecionado</DialogDescription>
+          </DialogHeader>
+          {previewItem && (
+            <div className="max-h-[70vh] overflow-y-auto pr-1">
+              <div className="space-y-4">
+              {(previewItem.subProduto && previewItem.subProduto !== 'geral') && (
+                <div className={`inline-block text-xs text-white px-2 py-1 rounded ${SUBPRODUCT_COLORS[previewItem.subProduto] || 'bg-gray-600'}`}>
+                  {formatSubProductLabel(previewItem.subProduto)}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">Data de início</div>
+                  <div className="text-sm font-medium">{formatFullDate(previewItem.dataInicio)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Data de fim</div>
+                  <div className="text-sm font-medium">{formatFullDate(getEndDate(previewItem)) || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Duração</div>
+                  <div className="text-sm font-medium">{previewItem.duracaoMeses ? `${previewItem.duracaoMeses} ${Number(previewItem.duracaoMeses) === 1 ? 'mês' : 'meses'}` : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">OKR</div>
+                  <div className="text-sm font-medium">{previewItem.okrId ? (okrs.find(o => o.id === previewItem.okrId)?.objetivo || previewItem.okrId) : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Status</div>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <span className={`inline-block w-3 h-3 rounded ${STATUS_CONFIG[previewItem.status]?.className || ''}`}></span>
+                    {STATUS_CONFIG[previewItem.status]?.label || previewItem.status}
+                  </div>
+                </div>
+              </div>
+
+              {previewItem.subitens && previewItem.subitens.length > 0 && (
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Subitens</div>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {previewItem.subitens.map((si, i) => (
+                      <li key={i}>{si}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(previewItem.duracaoMeses && previewItem.dataInicio) && (
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Progresso</div>
+                  <div className="duration-progress">
+                    <div className="duration-progress-fill" style={{ width: `${calculateDurationProgress(previewItem)}%` }}></div>
+                    <div className="duration-progress-text">{calculateDurationProgress(previewItem)}%</div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Métrica Input/Output</div>
+                <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.inputOutputMetric || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Tese de Produto</div>
+                <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.teseProduto || '-'}</div>
+              </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

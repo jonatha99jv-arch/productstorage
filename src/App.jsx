@@ -20,6 +20,7 @@ import UsersAdmin from './components/UsersAdmin'
 import ProfileEdit from './components/ProfileEdit'
 import RequestsPage from './components/RequestsPage'
 import { getSession, requireRole, logout, isMockMode } from './lib/auth'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   // ✅ TODOS OS HOOKS DEVEM VIR PRIMEIRO - NUNCA APÓS RETURNS CONDICIONAIS
@@ -27,6 +28,7 @@ function App() {
   const [databaseReady, setDatabaseReady] = useState(false)
   const [session, setSession] = useState(null)
   const [sessionLoading, setSessionLoading] = useState(true)
+  const [userName, setUserName] = useState('')
   const [showOKRManager, setShowOKRManager] = useState(false)
   const [showOKRProgress, setShowOKRProgress] = useState(false)
   const [showItemModal, setShowItemModal] = useState(false)
@@ -41,6 +43,8 @@ function App() {
     okrs,
     solicitacoes,
     minhasSolicitacoes,
+    solicitacaoVotes,
+    mySolicitacaoVotes,
     loading,
     error,
     saveRoadmapItem,
@@ -51,6 +55,9 @@ function App() {
     reloadData,
     deleteRoadmapItemsBulk,
     createSolicitacao,
+    toggleSolicitacaoVote,
+    deleteOwnSolicitacao,
+    loadSolicitacaoVotes,
   } = useSupabaseData()
 
   // Estados adicionais para logo
@@ -64,14 +71,53 @@ function App() {
       const currentSession = getSession()
       setSession(currentSession)
       setSessionLoading(false)
+      
+      // Se tiver sessão mas não tiver nome, buscar do banco
+      if (currentSession && !currentSession.nome) {
+        loadUserName(currentSession.id)
+      } else if (currentSession?.nome) {
+        setUserName(currentSession.nome)
+      }
     }
     
     checkSession()
   }, [])
 
+  // Buscar nome do usuário do banco
+  const loadUserName = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('nome')
+        .eq('id', userId)
+        .single()
+      
+      if (error) throw error
+      
+      if (data?.nome) {
+        setUserName(data.nome)
+        // Atualizar a sessão local com o nome
+        const updatedSession = { ...session, nome: data.nome }
+        setSession(updatedSession)
+        localStorage.setItem('session', JSON.stringify(updatedSession))
+      }
+    } catch (err) {
+      console.error('Erro ao carregar nome do usuário:', err)
+    }
+  }
+
   // Verificar se o banco de dados está configurado
   useEffect(() => {
     if (session) {
+      // Se a sessão tiver nome, usar
+      if (session.nome) {
+        setUserName(session.nome)
+      } else {
+        // Se não tiver, buscar do banco
+        loadUserName(session.id)
+      }
+      
+      // Verificar configuração do banco
       checkDatabaseSetup()
     }
   }, [session])
@@ -396,6 +442,13 @@ function App() {
               )}
             </h1>
             <div className="flex space-x-3">
+              {/* Nome do usuário logado */}
+              {session && (
+                <div className="text-white text-sm bg-white/10 px-3 py-1 rounded flex items-center gap-2">
+                  <span>👋</span>
+                  <span>Olá, {userName || 'Usuário'}</span>
+                </div>
+              )}
               {isMockMode() && (
                 <div className="text-blue-200 text-sm bg-blue-600 px-3 py-1 rounded flex items-center gap-2">
                   <span>🎭</span>
@@ -499,18 +552,21 @@ function App() {
           />
         )}
         {activePage==='requests' && (
-          <RequestsPage
-            solicitacoes={solicitacoes}
-            minhasSolicitacoes={minhasSolicitacoes}
-            produtos={[ 'aplicativo','web','parcerias','ai','automacao' ]}
-            subProdutos={{
-              web: ['geral','backoffice','portal_estrela','doctor','company'],
-              aplicativo: ['geral','brasil','global']
-            }}
-            onCreate={async (payload, file) => {
-              await createSolicitacao(payload, file)
-            }}
-          />
+          <ErrorBoundary>
+            <RequestsPage
+              solicitacoes={solicitacoes || []}
+              minhasSolicitacoes={minhasSolicitacoes || []}
+              produtos={[ 'aplicativo','web','parcerias','ai','automacao' ]}
+              subProdutos={{
+                web: ['geral','backoffice','portal_estrela','doctor','company'],
+                aplicativo: ['geral','brasil','global']
+              }}
+              onDeleteOwn={async (id)=>{ try { await deleteOwnSolicitacao(id) } catch(_) {} }}
+              onCreate={async (payload, file) => {
+                try { await createSolicitacao(payload, file) } catch(_) {}
+              }}
+            />
+          </ErrorBoundary>
         )}
         {activePage==='profile' && (
           <ProfileEdit />

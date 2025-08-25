@@ -1,5 +1,4 @@
 import { supabase } from './supabaseClient'
-import bcrypt from 'bcryptjs'
 
 // Função para verificar se estamos em modo mock
 export function isMockMode() {
@@ -69,15 +68,17 @@ export async function login(email, password) {
   // Modo real com Supabase
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, password_hash, role')
+    .select('id, nome, email, password_hash, role')
     .eq('email', email)
     .limit(1)
   if (error) throw new Error('Falha ao buscar usuário')
   if (!data || data.length === 0) throw new Error('Credenciais inválidas')
   const user = data[0]
+  // Importa bcryptjs sob demanda para evitar dependência de Node 'crypto' no bundle inicial
+  const { default: bcrypt } = await import('bcryptjs')
   const ok = await bcrypt.compare(password, user.password_hash)
   if (!ok) throw new Error('Credenciais inválidas')
-  const session = { id: user.id, email: user.email, role: user.role }
+  const session = { id: user.id, nome: user.nome, email: user.email, role: user.role }
   localStorage.setItem('session', JSON.stringify(session))
   return session
 }
@@ -114,8 +115,9 @@ export async function ensureDefaultAdmin() {
       .limit(1)
     if (error) return
     if (!data || data.length === 0) {
+      const { default: bcrypt } = await import('bcryptjs')
       const hash = await bcrypt.hash('Teste123', 10)
-      await supabase.from('users').insert([{ email, password_hash: hash, role: 'admin' }])
+      await supabase.from('users').insert([{ nome: 'Jonatha Vieira', email, password_hash: hash, role: 'admin' }])
     }
   } catch (_) {
     // silencioso

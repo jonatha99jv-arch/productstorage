@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import bcrypt from 'bcryptjs'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -11,7 +10,7 @@ const UsersAdmin = () => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ email:'', password:'', role:'viewer'})
+  const [form, setForm] = useState({ nome:'', email:'', password:'', role:'viewer'})
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -19,7 +18,7 @@ const UsersAdmin = () => {
 
   const load = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('users').select('id,email,role,created_at')
+    const { data, error } = await supabase.from('users').select('id,nome,email,role,created_at')
     if (error) setError(error.message)
     else setUsers(data || [])
     setLoading(false)
@@ -30,10 +29,11 @@ const UsersAdmin = () => {
   const createUser = async () => {
     try {
       setCreating(true)
+      const { default: bcrypt } = await import('bcryptjs')
       const hash = await bcrypt.hash(form.password, 10)
-      const { error } = await supabase.from('users').insert([{ email: form.email, password_hash: hash, role: form.role }])
+      const { error } = await supabase.from('users').insert([{ nome: form.nome, email: form.email, password_hash: hash, role: form.role }])
       if (error) throw error
-      setForm({ email:'', password:'', role:'viewer'})
+      setForm({ nome:'', email:'', password:'', role:'viewer'})
       setCreateOpen(false)
       await load()
     } catch (e) { setError(e.message) } finally { setCreating(false) }
@@ -43,6 +43,7 @@ const UsersAdmin = () => {
     try {
       const payload = { ...updates }
       if (payload.password) {
+        const { default: bcrypt } = await import('bcryptjs')
         payload.password_hash = await bcrypt.hash(payload.password, 10)
         delete payload.password
       }
@@ -57,14 +58,14 @@ const UsersAdmin = () => {
     await load()
   }
 
-  const filteredUsers = users.filter(u => u.email.toLowerCase().includes(search.toLowerCase()))
+  const filteredUsers = users.filter(u => u.email.toLowerCase().includes(search.toLowerCase()) || u.nome.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div className="bg-white p-4 border rounded-lg">
       <h2 className="text-lg font-semibold mb-3">Gerenciar Usuários</h2>
       {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
       <div className="flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center">
-        <Dialog open={createOpen} onOpenChange={(open)=>{ setCreateOpen(open); if (open) setForm({ email:'', password:'', role:'viewer'}) }}> 
+        <Dialog open={createOpen} onOpenChange={(open)=>{ setCreateOpen(open); if (open) setForm({ nome:'', email:'', password:'', role:'viewer'}) }}> 
           <DialogTrigger asChild>
             <Button className="bg-company-orange text-white">Criar Usuário</Button>
           </DialogTrigger>
@@ -73,6 +74,10 @@ const UsersAdmin = () => {
               <DialogTitle>Novo Usuário</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">Nome</label>
+                <input className="w-full border rounded px-2 py-1" value={form.nome} onChange={e=>setForm({...form,nome:e.target.value})} type="text" placeholder="Nome completo" autoComplete="off" />
+              </div>
               <div>
                 <label className="block text-sm mb-1">Email</label>
                 <input className="w-full border rounded px-2 py-1" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} type="email" placeholder="email@dominio.com" autoComplete="off" />
@@ -99,12 +104,13 @@ const UsersAdmin = () => {
             </div>
           </DialogContent>
         </Dialog>
-        <input className="border rounded px-2 py-1 sm:ml-auto" placeholder="Buscar por email" value={search} onChange={e=>setSearch(e.target.value)} />
+        <input className="border rounded px-2 py-1 sm:ml-auto" placeholder="Buscar por nome ou email" value={search} onChange={e=>setSearch(e.target.value)} />
       </div>
       {loading ? 'Carregando...' : (
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left">
+              <th>Nome</th>
               <th>Email</th>
               <th>Perfil</th>
               <th>Criado em</th>
@@ -114,6 +120,7 @@ const UsersAdmin = () => {
           <tbody>
             {filteredUsers.map(u => (
               <tr key={u.id} className="border-t">
+                <td>{u.nome}</td>
                 <td>{u.email}</td>
                 <td>
                   <select defaultValue={u.role} onChange={(e)=>updateUser(u.id,{ role: e.target.value })} className="border rounded px-2 py-1">
@@ -122,6 +129,10 @@ const UsersAdmin = () => {
                 </td>
                 <td>{new Date(u.created_at).toLocaleString()}</td>
                 <td className="space-x-2">
+                  <button className="px-2 py-1 border rounded" onClick={()=>{
+                    const nome = prompt('Novo nome', u.nome)
+                    if (nome) updateUser(u.id,{ nome })
+                  }}>Trocar nome</button>
                   <button className="px-2 py-1 border rounded" onClick={()=>{
                     const email = prompt('Novo email', u.email)
                     if (email) updateUser(u.id,{ email })

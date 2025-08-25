@@ -7,15 +7,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 const REQUIRED_HEADERS = [
   'Item',
   'Data de Início',
-  'Duração',
+  'Data Final',
   'Input/Output Metric',
   'Tese de Produto',
   'Status',
   'Produto'
 ]
 
-// Cabeçalho opcional para Web
-const OPTIONAL_HEADERS = ['Subproduto']
+// Cabeçalhos opcionais
+const OPTIONAL_HEADERS = ['Subproduto', 'Duração'] // Manter 'Duração' como opcional para compatibilidade
 
 const subProductMap = {
   'geral': 'geral',
@@ -99,7 +99,8 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         if (!row || row.length === 0) continue
         const item = String(row[idx['Item']] || '').trim()
         const dataInicio = normalizeDate(row[idx['Data de Início']])
-        const duracao = String(row[idx['Duração']] || '').trim()
+        const dataFinal = normalizeDate(row[idx['Data Final']])
+        const duracao = String(row[idx['Duração']] || '').trim() // Manter para compatibilidade
         const metric = String(row[idx['Input/Output Metric']] || '').trim()
         const tese = String(row[idx['Tese de Produto']] || '').trim()
         const statusLabel = String(row[idx['Status']] || '').trim()
@@ -117,19 +118,32 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           continue
         }
 
-        // normalizar duracao (inteiro >=1)
-        let normalizedDuracao = ''
-        if (duracao != null && duracao !== '') {
+        // Processar data final - priorizar "Data Final", mas manter compatibilidade com "Duração"
+        let dataFim = dataFinal
+        
+        // Se não tiver "Data Final", tentar calcular a partir de "Duração" (para compatibilidade)
+        if (!dataFim && duracao && dataInicio) {
           const duracaoStr = String(duracao).trim().replace(',', '.')
           const duracaoNum = Math.ceil(parseFloat(duracaoStr))
-          if (Number.isFinite(duracaoNum) && duracaoNum > 0) normalizedDuracao = String(duracaoNum)
+          if (Number.isFinite(duracaoNum) && duracaoNum > 0) {
+            const endDate = new Date(dataInicio)
+            endDate.setMonth(endDate.getMonth() + duracaoNum)
+            dataFim = endDate
+          }
+        }
+
+        // Validar que a data final é posterior à data de início
+        if (dataFim && dataInicio && dataFim <= dataInicio) {
+          setLogs(prev => [...prev, `Linha ${r + 1}: Data Final deve ser posterior à Data de Início`])
+          setErrorCount(c => c + 1)
+          continue
         }
 
         const payload = {
           nome: item,
           inputOutputMetric: metric,
           teseProduto: tese,
-          duracaoMeses: normalizedDuracao,
+          dataFim,
           dataInicio,
           status: statusMap[statusLabel] || 'nao_iniciado',
           okrId: '',
@@ -174,7 +188,13 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
             onChange={(e) => e.target.files && e.target.files[0] && handleFile(e.target.files[0])}
             disabled={isProcessing}
           />
-          <p className="text-sm text-gray-600">Colunas obrigatórias: {REQUIRED_HEADERS.join(', ')}</p>
+          <p className="text-sm text-gray-600">
+            Colunas obrigatórias: {REQUIRED_HEADERS.join(', ')}
+            <br />
+            <span className="text-xs text-gray-500">
+              Nota: Se não tiver "Data Final", pode usar "Duração" (em meses) que será convertida automaticamente
+            </span>
+          </p>
           {(successCount > 0 || errorCount > 0 || logs.length > 0) && (
             <Alert>
               <AlertDescription>

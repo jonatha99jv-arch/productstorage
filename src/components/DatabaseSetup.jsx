@@ -132,6 +132,34 @@ const DatabaseSetup = ({ onSetupComplete }) => {
         }
       }
 
+      // Criar tabela de votos em solicitações
+      setSetupStatus('Criando tabela de votos de solicitações...')
+      const { error: votesError } = await supabase.rpc('exec_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS solicitacao_votes (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            solicitacao_id UUID NOT NULL REFERENCES solicitacoes(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+          CREATE UNIQUE INDEX IF NOT EXISTS uniq_vote_per_user ON solicitacao_votes(solicitacao_id, user_id);
+          CREATE INDEX IF NOT EXISTS idx_votes_solicitacao ON solicitacao_votes(solicitacao_id);
+          ALTER TABLE solicitacao_votes ENABLE ROW LEVEL SECURITY;
+        `
+      })
+
+      if (votesError) {
+        console.log('Tentativa de criar tabela solicitacao_votes via RPC falhou, testando existência...')
+        const { error: testVotesError } = await supabase
+          .from('solicitacao_votes')
+          .select('id')
+          .limit(1)
+
+        if (testVotesError && testVotesError.code === '42P01') {
+          throw new Error('Tabela solicitacao_votes não existe e não foi possível criá-la automaticamente. Execute o script SQL manualmente no Supabase.')
+        }
+      }
+
       setSetupStatus('Configuração concluída com sucesso!')
       setTimeout(() => {
         onSetupComplete()

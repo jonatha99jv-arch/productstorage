@@ -13,7 +13,7 @@ const mockRoadmapItems = [
     subProduto: '',
     status: 'em_andamento',
     dataInicio: new Date('2024-01-15'),
-    duracaoMeses: '2',
+    dataFim: new Date('2024-03-15'),
     okrId: '1',
     subitens: ['Implementar 2FA', 'Design responsivo', 'Testes automatizados']
   },
@@ -26,7 +26,7 @@ const mockRoadmapItems = [
     subProduto: 'backoffice',
     status: 'planejado',
     dataInicio: new Date('2024-03-01'),
-    duracaoMeses: '3',
+    dataFim: new Date('2024-06-01'),
     okrId: '2',
     subitens: ['Gráficos interativos', 'Filtros avançados', 'Exportação PDF']
   },
@@ -39,7 +39,7 @@ const mockRoadmapItems = [
     subProduto: '',
     status: 'concluido',
     dataInicio: new Date('2023-11-01'),
-    duracaoMeses: '4',
+    dataFim: new Date('2024-03-01'),
     okrId: '1',
     subitens: ['Análise preditiva', 'Chatbot inteligente', 'Automação de relatórios']
   }
@@ -139,14 +139,19 @@ export const useSupabaseData = () => {
       teseProduto = dbItem.descricao || ''
     }
 
-    // Reconstituir subitens e duracao a partir de tags
+    // Reconstituir subitens e dataFim a partir de tags
     const tags = Array.isArray(dbItem.tags) ? dbItem.tags : []
-    let duracaoMeses = ''
+    let dataFim = null
     const subitens = []
     for (const tag of tags) {
-      if (typeof tag === 'string' && tag.startsWith('duracao:')) {
+      if (typeof tag === 'string' && tag.startsWith('dataFim:')) {
         const parts = tag.split(':')
-        if (parts[1]) duracaoMeses = parts[1]
+        if (parts[1]) {
+          const [yy, mm, dd] = parts[1].split('-').map(Number)
+          if (yy && mm && dd) {
+            dataFim = new Date(yy, mm - 1, dd)
+          }
+        }
       } else if (typeof tag === 'string') {
         subitens.push(tag)
       }
@@ -166,6 +171,20 @@ export const useSupabaseData = () => {
       }
     }
 
+    // data_fim pode vir como 'YYYY-MM-DD' (string). Construir Date local sem UTC.
+    let dataFimLocal = null
+    if (dbItem.data_fim) {
+      if (typeof dbItem.data_fim === 'string') {
+        const [yy, mm, dd] = dbItem.data_fim.split('-').map(Number)
+        if (yy && mm && dd) {
+          dataFimLocal = new Date(yy, mm - 1, dd)
+        }
+      } else {
+        const d = new Date(dbItem.data_fim)
+        if (!Number.isNaN(d.getTime())) dataFimLocal = d
+      }
+    }
+
     return {
       id: dbItem.id,
       nome: dbItem.titulo || '',
@@ -175,22 +194,28 @@ export const useSupabaseData = () => {
       subProduto: normalizeSubProduct(dbItem.sub_produto || ''),
       status: dbItem.status || 'nao_iniciado',
       dataInicio: dataInicioLocal,
-      duracaoMeses,
+      dataFim: dataFimLocal,
       okrId: dbItem.okr_id || '',
       subitens,
     }
   }
 
   const mapAppToDb = (appItem) => {
+    console.log('🔍 mapAppToDb - appItem recebido:', appItem)
+    console.log('🔍 mapAppToDb - dataFim:', appItem.dataFim, 'tipo:', typeof appItem.dataFim)
+    
     const descricao = JSON.stringify({
       inputOutputMetric: appItem.inputOutputMetric || '',
       teseProduto: appItem.teseProduto || ''
     })
 
     const tags = Array.isArray(appItem.subitens) ? [...appItem.subitens] : []
-    if (appItem.duracaoMeses) tags.push(`duracao:${appItem.duracaoMeses}`)
+    if (appItem.dataFim && appItem.dataFim instanceof Date) {
+      tags.push(`dataFim:${appItem.dataFim.getFullYear()}-${String(appItem.dataFim.getMonth() + 1).padStart(2, '0')}-${String(appItem.dataFim.getDate()).padStart(2, '0')}`);
+    }
 
     const toLocalDateString = (dateLike) => {
+      console.log('🔍 toLocalDateString - dateLike:', dateLike, 'tipo:', typeof dateLike)
       if (!dateLike) return null
       const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike
       if (Number.isNaN(d.getTime())) return null
@@ -214,8 +239,8 @@ export const useSupabaseData = () => {
       status: appItem.status || 'nao_iniciado',
       prioridade: appItem.prioridade || 'media',
       data_inicio: toLocalDateString(appItem.dataInicio),
-      // data_fim poderia ser calculada a partir da duração, mas manteremos null
-      data_fim: null,
+              // data_fim é obrigatória para o novo sistema
+      data_fim: toLocalDateString(appItem.dataFim),
       responsavel: appItem.responsavel || null,
       okr_id: appItem.okrId ? Number(appItem.okrId) : null,
       tags,
@@ -348,6 +373,25 @@ export const useSupabaseData = () => {
       console.error('Erro geral ao carregar solicitações:', err)
       setSolicitacoes([])
       setMinhasSolicitacoes([])
+    }
+  }
+
+  const deleteOwnSolicitacao = async (solicitacaoId) => {
+    try {
+      const session = getSession()
+      const userId = session?.id
+      if (!userId) throw new Error('Usuário não autenticado')
+      // Apenas do próprio usuário
+      const { error } = await supabase
+        .from('solicitacoes')
+        .delete()
+        .eq('id', solicitacaoId)
+        .eq('user_id', userId)
+      if (error) throw error
+      await loadSolicitacoes()
+    } catch (e) {
+      console.error('Erro ao excluir solicitação:', e)
+      throw e
     }
   }
 
@@ -701,6 +745,7 @@ export const useSupabaseData = () => {
     deleteOKR,
     reloadData: loadData,
     loadSolicitacoes,
+    deleteOwnSolicitacao,
     createSolicitacao,
     /**
      * Upsert por chave natural: titulo + produto + data_inicio

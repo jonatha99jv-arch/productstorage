@@ -74,30 +74,65 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
 
   // Função para verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
-    if (!item.dataInicio || !item.duracaoMeses) return false
+    if (!item.dataInicio || !item.dataFim) return false
 
     const startDate = new Date(item.dataInicio)
+    const endDate = new Date(item.dataFim)
+    
+    // Usar o ano das datas do item, não o ano atual
+    const itemYear = startDate.getFullYear()
+    
     // normalizar data de início para primeiro dia do mês de início
     const startMonthDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
-    // duração em meses inclui o mês de início. Ex.: início Julho + duração 2 => Julho e Agosto
-    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
-    const endMonthInclusive = new Date(startMonthDate.getFullYear(), startMonthDate.getMonth() + monthsIncluded, 0) // último dia do mês final
+    // normalizar data final para último dia do mês de fim
+    const endMonthDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0)
 
     const checkMonthStartDate = new Date(year, month - 1, 1)
     const checkMonthEndDate = new Date(year, month, 0)
 
-    return startMonthDate <= checkMonthEndDate && endMonthInclusive >= checkMonthStartDate
+    return startMonthDate <= checkMonthEndDate && endMonthDate >= checkMonthStartDate
+  }
+
+  // Função para calcular a proporção de preenchimento de um mês
+  const getMonthFillProportion = (item, month, year) => {
+    if (!item.dataInicio || !item.dataFim) return 0
+
+    const startDate = new Date(item.dataInicio)
+    const endDate = new Date(item.dataFim)
+    
+    // Usar o ano das datas do item
+    const itemYear = startDate.getFullYear()
+    
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 0)
+    
+    // Se o item não está ativo neste mês, retorna 0
+    if (startDate > monthEnd || endDate < monthStart) return 0
+    
+    // Calcular quantos dias do mês o item está ativo
+    const effectiveStart = startDate > monthStart ? startDate : monthStart
+    const effectiveEnd = endDate < monthEnd ? endDate : monthEnd
+    
+    // Calcular diferença em dias
+    const timeDiff = effectiveEnd.getTime() - effectiveStart.getTime()
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1
+    
+    const daysInMonth = monthEnd.getDate()
+    const activeDays = Math.max(0, daysDiff)
+    
+    return activeDays / daysInMonth
   }
 
   // Função para verificar se um item deve ser exibido no trimestre atual
   const shouldShowItemInQuarter = (item, quarter) => {
-    if (!item.dataInicio || !item.duracaoMeses) return true // Mostrar itens sem data
+    if (!item.dataInicio || !item.dataFim) return true // Mostrar itens sem data
     
-    const currentYear = new Date().getFullYear()
+    // Usar o ano das datas do item, não o ano atual
+    const itemYear = new Date(item.dataInicio).getFullYear()
     const quarterMonths = QUARTERS[quarter].monthNumbers
     
     // Verificar se o item está ativo em pelo menos um mês do trimestre
-    return quarterMonths.some(month => isItemActiveInMonth(item, month, currentYear))
+    return quarterMonths.some(month => isItemActiveInMonth(item, month, itemYear))
   }
 
   // Função de ordenação por prioridade de status e depois por data de início (mais antiga primeiro)
@@ -166,15 +201,13 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
 
   // Calcular progresso da duração baseado no status
   const calculateDurationProgress = (item) => {
-    if (!item.duracaoMeses || !item.dataInicio) return 0
+    if (!item.dataInicio || !item.dataFim) return 0
     
     const startDate = new Date(item.dataInicio)
-    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
-    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0) // último dia do mês final
+    const endDate = new Date(item.dataFim)
     
-    const now = new Date()
     const totalDuration = endDate.getTime() - startDate.getTime()
-    const elapsed = now.getTime() - startDate.getTime()
+    const elapsed = new Date().getTime() - startDate.getTime()
     
     if (elapsed <= 0) return 0
     if (elapsed >= totalDuration) return 100
@@ -183,11 +216,10 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   }
 
   const formatDateRange = (item) => {
-    if (!item.dataInicio || !item.duracaoMeses) return ''
+    if (!item.dataInicio || !item.dataFim) return ''
     
     const startDate = new Date(item.dataInicio)
-    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
-    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0)
+    const endDate = new Date(item.dataFim)
     
     const formatDate = (date) => {
       return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
@@ -197,10 +229,10 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   }
 
   const getEndDate = (item) => {
-    if (!item?.dataInicio || !item?.duracaoMeses) return null
+    if (!item?.dataInicio || !item?.dataFim) return null
     const startDate = new Date(item.dataInicio)
-    const monthsIncluded = Math.max(1, parseInt(item.duracaoMeses, 10) || 1)
-    return new Date(startDate.getFullYear(), startDate.getMonth() + monthsIncluded, 0)
+    const endDate = new Date(item.dataFim)
+    return endDate
   }
 
   const formatFullDate = (dateLike) => {
@@ -338,7 +370,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                         </div>
                       )}
                       {/* Subitens removidos da coluna Item conforme solicitado */}
-                      {item.duracaoMeses && item.dataInicio && (
+                      {item.dataInicio && item.dataFim && (
                         <div className="space-y-1">
                           <div className="text-xs text-gray-500 flex items-center space-x-1">
                             <Calendar className="h-3 w-3" />
@@ -361,13 +393,39 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   {/* Colunas dos meses com marcação de período */}
                   {currentQuarter.months.map((month, index) => {
                     const monthNumber = currentQuarter.monthNumbers[index]
-                    const isActive = isItemActiveInMonth(item, monthNumber, currentYear)
+                    // Usar o ano das datas do item, não o ano atual
+                    const itemYear = item.dataInicio ? new Date(item.dataInicio).getFullYear() : new Date().getFullYear()
+                    const isActive = isItemActiveInMonth(item, monthNumber, itemYear)
+                    const fillProportion = getMonthFillProportion(item, monthNumber, itemYear)
+                    
+                    // Calcular posição da barra baseada na data de início
+                    const getBarPosition = () => {
+                      if (!item.dataInicio) return { marginLeft: '0' }
+                      
+                      const startDate = new Date(item.dataInicio)
+                      const monthStart = new Date(itemYear, monthNumber - 1, 1)
+                      
+                      // Se o item começa neste mês, calcular posição baseada no dia
+                      if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === itemYear) {
+                        const dayOfMonth = startDate.getDate()
+                        const daysInMonth = new Date(itemYear, monthNumber, 0).getDate()
+                        const startPosition = (dayOfMonth - 1) / daysInMonth // Posição relativa no mês
+                        return { marginLeft: `${startPosition * 100}%` }
+                      }
+                      
+                      // Se o item começa em mês anterior, barra à esquerda
+                      return { marginLeft: '0' }
+                    }
                     
                     return (
                       <td key={month} className="month-cell">
                         {isActive && (
                           <div 
                             className={`status-visual ${STATUS_CONFIG[item.status]?.className || ''}`}
+                            style={{
+                              width: `${Math.max(fillProportion * 100, 30)}%`, // Mínimo 30% para visibilidade
+                              ...getBarPosition() // Aplicar posição da barra
+                            }}
                             onClick={() => {
                               // Ciclar entre os status ao clicar
                               const statusKeys = Object.keys(STATUS_CONFIG)
@@ -375,7 +433,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                               const nextIndex = (currentIndex + 1) % statusKeys.length
                               handleStatusChange(item.id, statusKeys[nextIndex])
                             }}
-                            title={`${STATUS_CONFIG[item.status]?.label || ''} - ${month}`}
+                            title={`${STATUS_CONFIG[item.status]?.label || ''} - ${month} (${Math.round(fillProportion * 100)}% do mês)`}
                           >
                           </div>
                         )}
@@ -461,12 +519,12 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   <div className="text-sm font-medium">{formatFullDate(previewItem.dataInicio)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500">Data de fim</div>
-                  <div className="text-sm font-medium">{formatFullDate(getEndDate(previewItem)) || '-'}</div>
+                  <div className="text-xs text-gray-500">Data Final</div>
+                  <div className="text-sm font-medium">{previewItem.dataFim ? new Date(previewItem.dataFim).toLocaleDateString('pt-BR') : '-'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Duração</div>
-                  <div className="text-sm font-medium">{previewItem.duracaoMeses ? `${previewItem.duracaoMeses} ${Number(previewItem.duracaoMeses) === 1 ? 'mês' : 'meses'}` : '-'}</div>
+                  <div className="text-sm font-medium">{previewItem.dataInicio && previewItem.dataFim ? `${new Date(previewItem.dataFim).getFullYear() - new Date(previewItem.dataInicio).getFullYear()} anos` : '-'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">OKR</div>
@@ -492,7 +550,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 </div>
               )}
 
-              {(previewItem.duracaoMeses && previewItem.dataInicio) && (
+              {(previewItem.dataInicio && previewItem.dataFim) && (
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Progresso</div>
                   <div className="duration-progress">

@@ -157,31 +157,13 @@
   position: relative;
 }
 
-/* Larguras fixas via colgroup (garante meses realmente estreitos) */
-.roadmap-table col.col-select { width: 32px; }
-.roadmap-table col.col-item { width: 30%; }
-.roadmap-table col.col-month { width: 44px !important; }
-.roadmap-table col.col-okr { width: 140px; }
-.roadmap-table col.col-metric { width: 30%; }
-.roadmap-table col.col-tese { width: 35%; }
-.roadmap-table col.col-actions { width: 96px; }
-
-/* Colunas específicas para ampliar espaço das descrições */
-.roadmap-table .metric-cell,
-.roadmap-table .tese-cell {
-  min-width: 320px;
-  max-width: 680px;
+/* Controle de largura das colunas dos meses */
+.roadmap-table col.col-month { 
+  width: 44px !important; 
 }
 
-/* Coluna do Item com largura maior */
-.roadmap-table .item-name-cell {
-  min-width: 300px;
-  max-width: 720px;
-}
-
-/* Status visual - quadrados coloridos sem texto */
+/* Status visual - quadrados coloridos com preenchimento proporcional */
 .status-visual {
-  width: 100%;
   height: 100%;
   border-radius: 4px;
   cursor: pointer;
@@ -371,5 +353,12 @@
   background: var(--company-orange);
   color: white;
   border-color: var(--company-orange);
+}
+
+/* Garantir que as colunas dos meses tenham largura fixa */
+.roadmap-table th.month-header {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
 }
 

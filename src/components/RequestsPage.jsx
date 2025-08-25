@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog.jsx'
 import { getSession } from '@/lib/auth'
 
-export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [], produtos = [], subProdutos = {}, onCreate }) {
+export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [], produtos = [], subProdutos = {}, onCreate, onDeleteOwn }) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState(null)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [viewItem, setViewItem] = useState(null)
   const session = getSession()
 
   const [form, setForm] = useState({
@@ -20,8 +22,16 @@ export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [
     retornoEsperado: '',
   })
 
-  const listAll = useMemo(() => Array.isArray(solicitacoes) ? solicitacoes : [], [solicitacoes])
+  // Lista ordenada por data de criação (mais recentes primeiro)
+  const listAll = useMemo(() => {
+    const arr = Array.isArray(solicitacoes) ? [...solicitacoes] : []
+    arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    return arr
+  }, [solicitacoes])
+
   const listMine = useMemo(() => Array.isArray(minhasSolicitacoes) ? minhasSolicitacoes : [], [minhasSolicitacoes])
+
+  const handleView = (s) => { setViewItem(s); setViewOpen(true) }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -45,8 +55,8 @@ export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [
     <div className="space-y-6">
       <Tabs defaultValue="todas" className="w-full">
         <TabsList>
-          <TabsTrigger value="todas">Solicitações</TabsTrigger>
-          <TabsTrigger value="minhas">Minhas solicitações</TabsTrigger>
+          <TabsTrigger value="todas" onClick={() => onRefreshVotes?.()}>Solicitações</TabsTrigger>
+          <TabsTrigger value="minhas" onClick={() => onRefreshVotes?.()}>Minhas solicitações</TabsTrigger>
         </TabsList>
         <TabsContent value="todas">
           <div className="overflow-x-auto">
@@ -58,20 +68,26 @@ export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [
                   <th className="text-left p-2">Subproduto</th>
                   <th className="text-left p-2">Solicitante</th>
                   <th className="text-left p-2">Criado em</th>
+                  <th className="text-left p-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {listAll.map((s) => (
-                  <tr key={s.id} className="border-t">
+                  <tr key={s.id} onClick={()=>handleView(s)} className="border-t hover:bg-gray-50 cursor-pointer">
                     <td className="p-2 font-medium text-company-dark-blue">{s.titulo}</td>
                     <td className="p-2 capitalize">{s.produto}</td>
                     <td className="p-2">{s.sub_produto || '-'}</td>
                     <td className="p-2">{s.nome_solicitante} ({s.email_solicitante})</td>
-                    <td className="p-2">{new Date(s.created_at).toLocaleString()}</td>
+                    <td className="p-2">{s.created_at ? new Date(s.created_at).toLocaleString() : '-'}</td>
+                    <td className="p-2">
+                      {session && s.user_id === session.id && (
+                        <button onClick={(e)=> { e.stopPropagation(); onDeleteOwn && onDeleteOwn(s.id) }} className="text-red-600 hover:underline">Excluir</button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {listAll.length === 0 && (
-                  <tr><td colSpan={5} className="p-4 text-center text-gray-500">Nenhuma solicitação encontrada.</td></tr>
+                  <tr><td colSpan={6} className="p-4 text-center text-gray-500">Nenhuma solicitação encontrada.</td></tr>
                 )}
               </tbody>
             </table>
@@ -90,20 +106,24 @@ export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [
                   <th className="text-left p-2">Subproduto</th>
                   <th className="text-left p-2">Criado em</th>
                   <th className="text-left p-2">Arquivo</th>
+                  <th className="text-left p-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {listMine.map((s) => (
-                  <tr key={s.id} className="border-t">
+                  <tr key={s.id} onClick={()=>handleView(s)} className="border-t hover:bg-gray-50 cursor-pointer">
                     <td className="p-2 font-medium text-company-dark-blue">{s.titulo}</td>
                     <td className="p-2 capitalize">{s.produto}</td>
                     <td className="p-2">{s.sub_produto || '-'}</td>
-                    <td className="p-2">{new Date(s.created_at).toLocaleString()}</td>
+                    <td className="p-2">{s.created_at ? new Date(s.created_at).toLocaleString() : '-'}</td>
                     <td className="p-2">{s.file_url ? <a className="text-blue-600 underline" href={s.file_url} target="_blank" rel="noreferrer">{s.file_name || 'Arquivo'}</a> : '-'}</td>
+                    <td className="p-2">
+                      <button onClick={(e)=> { e.stopPropagation(); onDeleteOwn && onDeleteOwn(s.id) }} className="text-red-600 hover:underline">Excluir</button>
+                    </td>
                   </tr>
                 ))}
                 {listMine.length === 0 && (
-                  <tr><td colSpan={5} className="p-4 text-center text-gray-500">Você ainda não criou solicitações.</td></tr>
+                  <tr><td colSpan={6} className="p-4 text-center text-gray-500">Você ainda não criou solicitações.</td></tr>
                 )}
               </tbody>
             </table>
@@ -174,6 +194,61 @@ export default function RequestsPage({ solicitacoes = [], minhasSolicitacoes = [
               <Button type="submit" className="bg-company-dark-blue text-white">Salvar</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Visualização de solicitação */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da solicitação</DialogTitle>
+          </DialogHeader>
+          {viewItem && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">Título</div>
+                  <div className="font-medium text-company-dark-blue">{viewItem.titulo || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Criado em</div>
+                  <div>{viewItem.created_at ? new Date(viewItem.created_at).toLocaleString() : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Produto</div>
+                  <div className="capitalize">{viewItem.produto || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Subproduto</div>
+                  <div>{viewItem.sub_produto || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Solicitante</div>
+                  <div>{viewItem.nome_solicitante || '-'} ({viewItem.email_solicitante || '-'})</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Departamento</div>
+                  <div>{viewItem.departamento || '-'}</div>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Descrição</div>
+                <div className="whitespace-pre-wrap">{viewItem.descricao || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Retorno esperado</div>
+                <div className="whitespace-pre-wrap">{viewItem.retorno_esperado || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Documento</div>
+                {viewItem.file_url ? (
+                  <a className="text-blue-600 underline" href={viewItem.file_url} target="_blank" rel="noreferrer">{viewItem.file_name || 'Abrir arquivo'}</a>
+                ) : (
+                  <span>-</span>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

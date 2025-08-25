@@ -3,6 +3,7 @@
 -- Usuários e controle de acesso
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'viewer', -- viewer | editor | admin
@@ -130,3 +131,35 @@ COMMENT ON COLUMN roadmap_items.status IS 'Status do item: planejado, em_andamen
 COMMENT ON COLUMN roadmap_items.prioridade IS 'Prioridade: baixa, media, alta, critica';
 COMMENT ON COLUMN okrs.progresso IS 'Progresso do OKR em porcentagem (0-100)';
 COMMENT ON TABLE solicitacoes IS 'Solicitações de mudança/feature dos usuários';
+
+-- Votos em solicitações
+CREATE TABLE IF NOT EXISTS solicitacao_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    solicitacao_id UUID NOT NULL REFERENCES solicitacoes(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_vote_per_user ON solicitacao_votes(solicitacao_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_votes_solicitacao ON solicitacao_votes(solicitacao_id);
+
+ALTER TABLE solicitacao_votes ENABLE ROW LEVEL SECURITY;
+
+-- Políticas abertas (ajuste depois conforme necessário)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'solicitacao_votes' AND policyname = 'votes_select'
+  ) THEN
+    EXECUTE 'CREATE POLICY votes_select ON solicitacao_votes FOR SELECT USING (true)';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'solicitacao_votes' AND policyname = 'votes_insert'
+  ) THEN
+    EXECUTE 'CREATE POLICY votes_insert ON solicitacao_votes FOR INSERT WITH CHECK (true)';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'solicitacao_votes' AND policyname = 'votes_delete'
+  ) THEN
+    EXECUTE 'CREATE POLICY votes_delete ON solicitacao_votes FOR DELETE USING (true)';
+  END IF;
+END $$;

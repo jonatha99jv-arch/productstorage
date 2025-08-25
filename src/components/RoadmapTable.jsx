@@ -175,9 +175,9 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
                           </ul>
                         </div>
                       )}
-                      {item.duracaoMeses && (
-                        <div className="text-xs text-gray-500 flex items-center space-x-1">
-                          <span>⏱️ {item.duracaoMeses} {item.duracaoMeses === 1 ? 'mês' : 'meses'}</span>
+                      {item.dataFim && (
+                        <div className="text-xs text-gray-500">
+                          <span>📅 Final: {new Date(item.dataFim).toLocaleDateString('pt-BR')}</span>
                         </div>
                       )}
                     </div>

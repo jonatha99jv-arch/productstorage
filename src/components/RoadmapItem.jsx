@@ -83,10 +83,10 @@ const RoadmapItem = ({ item, okrs, onEdit, onDelete }) => {
         </div>
 
         {/* Duração */}
-        {item.duracaoMeses && (
-          <div className="flex items-center space-x-1 text-xs text-gray-500">
-            <Clock className="h-3 w-3" />
-            <span>{item.duracaoMeses} {item.duracaoMeses === 1 ? 'mês' : 'meses'}</span>
+        {item.dataFim && (
+          <div className="flex items-center space-x-1 text-gray-600">
+            <span>📅</span>
+            <span>Final: {new Date(item.dataFim).toLocaleDateString('pt-BR')}</span>
           </div>
         )}
 

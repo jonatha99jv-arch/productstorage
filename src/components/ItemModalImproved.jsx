@@ -42,7 +42,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
     subitens: [''],
     inputOutputMetric: '',
     teseProduto: '',
-    duracaoMeses: '',
+    dataFim: null,
     dataInicio: null,
     status: 'nao_iniciado',
     okrId: '',
@@ -51,6 +51,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   })
 
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [calendarFimOpen, setCalendarFimOpen] = useState(false)
 
   useEffect(() => {
     if (item) {
@@ -60,7 +61,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
         subitens: item.subitens && item.subitens.length > 0 ? item.subitens : [''],
         inputOutputMetric: item.inputOutputMetric || '',
         teseProduto: item.teseProduto || '',
-        duracaoMeses: item.duracaoMeses || '',
+        dataFim: item.dataFim ? new Date(item.dataFim) : null,
         dataInicio: item.dataInicio ? new Date(item.dataInicio) : null,
         status: item.status || 'nao_iniciado',
         okrId: item.okrId || '',
@@ -111,12 +112,24 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
       return
     }
 
+    // Validação adicional para datas
+    if (formData.dataInicio && formData.dataFim) {
+      const inicio = new Date(formData.dataInicio)
+      const fim = new Date(formData.dataFim)
+      if (fim <= inicio) {
+        alert('A data final deve ser posterior à data de início.')
+        return
+      }
+    }
+
     const dataToSave = {
       ...formData,
       subitens: formData.subitens.filter(subitem => subitem.trim() !== ''),
-      dataInicio: formData.dataInicio ? formData.dataInicio.toISOString() : null
+      dataInicio: formData.dataInicio ? formData.dataInicio.toISOString() : null,
+      dataFim: formData.dataFim ? formData.dataFim.toISOString() : null
     }
 
+    console.log('🔍 ItemModalImproved - dados a serem salvos:', dataToSave)
     onSave(dataToSave)
   }
 
@@ -290,19 +303,37 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             </Popover>
           </div>
 
-          {/* Duração */}
+          {/* Data Final */}
           <div className="space-y-1.5">
-            <Label htmlFor="duracao">Duração (meses)</Label>
-            <Input
-              id="duracao"
-              type="number"
-              min="1"
-              max="24"
-              value={formData.duracaoMeses}
-              onChange={(e) => handleInputChange('duracaoMeses', e.target.value)}
-              placeholder="Ex: 3"
-            />
+            <Label>Data Final</Label>
+            <Popover open={calendarFimOpen} onOpenChange={setCalendarFimOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.dataFim ? (
+                    formData.dataFim.toLocaleDateString('pt-BR')
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.dataFim}
+                  onSelect={(date) => {
+                    handleInputChange('dataFim', date)
+                    setCalendarFimOpen(false)
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
+
           {/* Status */}
           <div className="space-y-1.5">
             <Label htmlFor="status">Status</Label>

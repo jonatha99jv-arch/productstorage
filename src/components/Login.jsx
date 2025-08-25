@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
-import { login, ensureDefaultAdmin } from '@/lib/auth'
+import { login, ensureDefaultAdmin, isMockMode } from '@/lib/auth'
 
 const Login = ({ onSuccess }) => {
   const [email, setEmail] = useState('')
@@ -38,6 +38,16 @@ const Login = ({ onSuccess }) => {
               e.currentTarget.outerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="color:#1D1830;font-weight:700;font-size:32px;line-height:1">Starbem</span><span style="width:28px;height:28px;background:linear-gradient(135deg,#FF9015,#FF1F76);clip-path:polygon(50% 0%,61% 35%,98% 38%,70% 60%,80% 95%,50% 75%,20% 95%,30% 60%,2% 38%,39% 35%)"></span></div>'
             }}
           />
+          {isMockMode() && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+              <div className="text-sm font-medium text-blue-800 mb-2">🎭 Modo Desenvolvimento</div>
+              <div className="text-xs text-blue-600 space-y-1">
+                <div><strong>admin@starbem.com</strong> / admin123</div>
+                <div><strong>editor@starbem.com</strong> / editor123</div>
+                <div><strong>dev@starbem.com</strong> / dev123</div>
+              </div>
+            </div>
+          )}
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>

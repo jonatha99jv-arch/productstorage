@@ -1,5 +1,74 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { isMockMode } from '../lib/auth'
+
+// Dados mock para desenvolvimento local
+const mockRoadmapItems = [
+  {
+    id: '1',
+    nome: 'Sistema de Login Aprimorado',
+    inputOutputMetric: 'Redução de 50% nos problemas de autenticação',
+    teseProduto: 'Melhorar a experiência de login e segurança do sistema',
+    produto: 'aplicativo',
+    subProduto: '',
+    status: 'em_andamento',
+    dataInicio: new Date('2024-01-15'),
+    duracaoMeses: '2',
+    okrId: '1',
+    subitens: ['Implementar 2FA', 'Design responsivo', 'Testes automatizados']
+  },
+  {
+    id: '2',
+    nome: 'Dashboard Executivo',
+    inputOutputMetric: 'Aumento de 30% na velocidade de tomada de decisão',
+    teseProduto: 'Painel gerencial com métricas em tempo real',
+    produto: 'web',
+    subProduto: 'backoffice',
+    status: 'planejado',
+    dataInicio: new Date('2024-03-01'),
+    duracaoMeses: '3',
+    okrId: '2',
+    subitens: ['Gráficos interativos', 'Filtros avançados', 'Exportação PDF']
+  },
+  {
+    id: '3',
+    nome: 'Integração com IA',
+    inputOutputMetric: 'Automação de 40% dos processos manuais',
+    teseProduto: 'Implementar assistente de IA para otimização',
+    produto: 'ai',
+    subProduto: '',
+    status: 'concluido',
+    dataInicio: new Date('2023-11-01'),
+    duracaoMeses: '4',
+    okrId: '1',
+    subitens: ['Análise preditiva', 'Chatbot inteligente', 'Automação de relatórios']
+  }
+]
+
+const mockOKRs = [
+  {
+    id: '1',
+    objetivo: 'Melhorar Experiência do Usuário',
+    keyResults: [
+      'Reduzir tempo de carregamento em 40%',
+      'Aumentar satisfação do usuário para 4.5/5',
+      'Diminuir taxa de abandono para 15%'
+    ],
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-15T12:00:00Z'
+  },
+  {
+    id: '2',
+    objetivo: 'Aumentar Eficiência Operacional',
+    keyResults: [
+      'Automatizar 50% dos processos manuais',
+      'Reduzir custos operacionais em 25%',
+      'Implementar 3 novos dashboards gerenciais'
+    ],
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-10T10:30:00Z'
+  }
+]
 
 export const useSupabaseData = () => {
   const [roadmapItems, setRoadmapItems] = useState([])
@@ -156,6 +225,35 @@ export const useSupabaseData = () => {
       setLoading(true)
       setError(null)
 
+      if (isMockMode()) {
+        // Modo mock para desenvolvimento local
+        console.log('🎭 Usando dados MOCK para desenvolvimento local')
+        
+        // Simular delay de rede
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
+        // Carregar dados do localStorage se existirem, senão usar dados mock
+        const savedItems = localStorage.getItem('mockRoadmapItems')
+        const savedOKRs = localStorage.getItem('mockOKRs')
+        
+        if (savedItems) {
+          setRoadmapItems(JSON.parse(savedItems))
+        } else {
+          setRoadmapItems(mockRoadmapItems)
+          localStorage.setItem('mockRoadmapItems', JSON.stringify(mockRoadmapItems))
+        }
+        
+        if (savedOKRs) {
+          setOkrs(JSON.parse(savedOKRs))
+        } else {
+          setOkrs(mockOKRs)
+          localStorage.setItem('mockOKRs', JSON.stringify(mockOKRs))
+        }
+        
+        return
+      }
+
+      // Modo real com Supabase
       // Carregar itens do roadmap
       const { data: roadmapData, error: roadmapError } = await supabase
         .from('roadmap_items')
@@ -220,6 +318,36 @@ export const useSupabaseData = () => {
 
   const saveRoadmapItem = async (itemData) => {
     try {
+      if (isMockMode()) {
+        // Modo mock - usar localStorage
+        console.log('💾 Salvando item em modo MOCK:', itemData.nome)
+        
+        // Simular delay de rede
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        const currentItems = JSON.parse(localStorage.getItem('mockRoadmapItems') || '[]')
+        
+        if (itemData.id && itemData.id !== 'new') {
+          // Atualizar item existente
+          const updatedItems = currentItems.map(item => 
+            item.id === itemData.id ? { ...itemData } : item
+          )
+          setRoadmapItems(updatedItems)
+          localStorage.setItem('mockRoadmapItems', JSON.stringify(updatedItems))
+        } else {
+          // Criar novo item
+          const newItem = {
+            ...itemData,
+            id: Date.now().toString()
+          }
+          const newItems = [...currentItems, newItem]
+          setRoadmapItems(newItems)
+          localStorage.setItem('mockRoadmapItems', JSON.stringify(newItems))
+        }
+        return
+      }
+      
+      // Modo real com Supabase
       if (itemData.id && itemData.id !== 'new') {
         // Atualizar item existente
         const payload = mapAppToDb(itemData)
@@ -272,6 +400,19 @@ export const useSupabaseData = () => {
 
   const deleteRoadmapItem = async (itemId) => {
     try {
+      if (isMockMode()) {
+        // Modo mock - usar localStorage
+        console.log('🗑️ Deletando item em modo MOCK:', itemId)
+        
+        const currentItems = JSON.parse(localStorage.getItem('mockRoadmapItems') || '[]')
+        const updatedItems = currentItems.filter(item => item.id !== itemId)
+        
+        setRoadmapItems(updatedItems)
+        localStorage.setItem('mockRoadmapItems', JSON.stringify(updatedItems))
+        return
+      }
+      
+      // Modo real com Supabase
       const { error } = await supabase
         .from('roadmap_items')
         .delete()
@@ -313,6 +454,21 @@ export const useSupabaseData = () => {
 
   const updateRoadmapItemStatus = async (itemId, newStatus) => {
     try {
+      if (isMockMode()) {
+        // Modo mock - usar localStorage
+        console.log('🔄 Atualizando status em modo MOCK:', itemId, newStatus)
+        
+        const currentItems = JSON.parse(localStorage.getItem('mockRoadmapItems') || '[]')
+        const updatedItems = currentItems.map(item =>
+          item.id === itemId ? { ...item, status: newStatus } : item
+        )
+        
+        setRoadmapItems(updatedItems)
+        localStorage.setItem('mockRoadmapItems', JSON.stringify(updatedItems))
+        return
+      }
+      
+      // Modo real com Supabase
       const { error } = await supabase
         .from('roadmap_items')
         .update({ status: newStatus, updated_at: new Date().toISOString() })

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Aplicação Starbem</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .debug-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status { 
+            padding: 8px 16px; 
+            border-radius: 4px; 
+            margin: 5px 0; 
+            font-weight: bold; 
+        }
+        .status.ok { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow-x: auto; 
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Sistema Starbem</h1>
+    
+    <div class="debug-card">
+        <h2>📊 Status do Sistema</h2>
+        <div id="system-status">
+            <div class="status info">⏳ Verificando...</div>
+        </div>
+        
+        <h3>🎯 Ações de Debug</h3>
+        <button onclick="clearAllData()">🗑️ Limpar Dados Locais</button>
+        <button onclick="testMockMode()">🎭 Testar Modo Mock</button>
+        <button onclick="checkLocalStorage()">💾 Verificar LocalStorage</button>
+        <button onclick="testLogin()">🔐 Testar Login</button>
+        <button onclick="window.open('http://localhost:5173', '_blank')">🚀 Abrir Aplicação</button>
+    </div>
+    
+    <div class="debug-card">
+        <h2>📝 Logs do Sistema</h2>
+        <div id="logs"></div>
+    </div>
+    
+    <div class="debug-card">
+        <h2>🛠️ Instruções de Reparo</h2>
+        <ol>
+            <li><strong>Limpar Cache do Browser:</strong> 
+                <ul>
+                    <li>Chrome/Edge: F12 → Application → Storage → Clear site data</li>
+                    <li>Firefox: F12 → Storage → Clear All</li>
+                    <li>Safari: Develop → Empty Caches</li>
+                </ul>
+            </li>
+            <li><strong>Forçar Reload:</strong> Ctrl+Shift+R (Cmd+Shift+R no Mac)</li>
+            <li><strong>Modo Incógnito/Privado:</strong> Teste em uma janela privada</li>
+            <li><strong>Console JavaScript:</strong> F12 → Console (verificar erros)</li>
+        </ol>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `status ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logElement.appendChild(logEntry);
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearAllData() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                log('✅ Todos os dados locais foram limpos', 'ok');
+                log('🔄 Recarregue a página da aplicação para testar', 'info');
+            } catch (error) {
+                log('❌ Erro ao limpar dados: ' + error.message, 'error');
+            }
+        }
+        
+        function testMockMode() {
+            const isMock = !localStorage.getItem('VITE_SUPABASE_URL');
+            log(`🎭 Modo Mock: ${isMock ? 'ATIVO' : 'INATIVO'}`, isMock ? 'ok' : 'info');
+            
+            if (isMock) {
+                log('👤 Usuários disponíveis:', 'info');
+                log('• admin@starbem.com / admin123 (Administrador)', 'info');
+                log('• editor@starbem.com / editor123 (Editor)', 'info');
+                log('• dev@starbem.com / dev123 (Desenvolvedor)', 'info');
+            }
+        }
+        
+        function checkLocalStorage() {
+            try {
+                const session = localStorage.getItem('session');
+                const mockRoadmap = localStorage.getItem('mockRoadmapItems');
+                const mockOKRs = localStorage.getItem('mockOKRs');
+                
+                log(`📊 Session: ${session ? 'Presente' : 'Ausente'}`, session ? 'ok' : 'info');
+                log(`🗺️ Mock Roadmap: ${mockRoadmap ? 'Presente' : 'Ausente'}`, mockRoadmap ? 'ok' : 'info');
+                log(`🎯 Mock OKRs: ${mockOKRs ? 'Presente' : 'Ausente'}`, mockOKRs ? 'ok' : 'info');
+                
+                if (session) {
+                    const sessionData = JSON.parse(session);
+                    log(`👤 Usuário logado: ${sessionData.email} (${sessionData.role})`, 'ok');
+                }
+            } catch (error) {
+                log('❌ Erro ao verificar localStorage: ' + error.message, 'error');
+            }
+        }
+        
+        function testLogin() {
+            const mockSession = {
+                id: 'debug-user',
+                email: 'debug@starbem.com',
+                role: 'admin',
+                name: 'Usuário Debug',
+                isMock: true
+            };
+            
+            try {
+                localStorage.setItem('session', JSON.stringify(mockSession));
+                log('✅ Sessão de debug criada com sucesso', 'ok');
+                log('🔄 Acesse a aplicação - você deve estar logado automaticamente', 'info');
+            } catch (error) {
+                log('❌ Erro ao criar sessão debug: ' + error.message, 'error');
+            }
+        }
+        
+        // Verificação inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Sistema de debug iniciado', 'ok');
+            
+            // Verificar se o servidor está rodando
+            fetch('http://localhost:5173')
+                .then(response => {
+                    if (response.ok) {
+                        log('✅ Servidor local está funcionando (localhost:5173)', 'ok');
+                        document.getElementById('system-status').innerHTML = 
+                            '<div class="status ok">✅ Sistema Online</div>';
+                    } else {
+                        throw new Error('Servidor retornou: ' + response.status);
+                    }
+                })
+                .catch(error => {
+                    log('❌ Erro de conexão: ' + error.message, 'error');
+                    document.getElementById('system-status').innerHTML = 
+                        '<div class="status error">❌ Sistema Offline</div>';
+                });
+                
+            // Auto-verificação inicial
+            setTimeout(() => {
+                testMockMode();
+                checkLocalStorage();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

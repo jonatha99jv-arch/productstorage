@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
-import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target } from 'lucide-react'
+import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, TrendingUp } from 'lucide-react'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
 import OKRManager from './components/OKRManager'
 import BulkImportModal from './components/BulkImportModal'
@@ -10,15 +10,30 @@ import OKRProgress from './components/OKRProgress'
 import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
 import DatabaseSetup from './components/DatabaseSetup'
+import { YCareerDiagram } from './components/YCareerDiagram'
+import { PerformanceDashboard } from './components/PerformanceDashboard'
+import { MetricsAdmin } from './components/MetricsAdmin'
+import { mockUser } from './data/careerData'
 import './App.css'
 import Login from './components/Login'
 import UsersAdmin from './components/UsersAdmin'
 import ProfileEdit from './components/ProfileEdit'
-import { getSession, requireRole, logout } from './lib/auth'
+import { getSession, requireRole, logout, isMockMode } from './lib/auth'
 
 function App() {
+  // ✅ TODOS OS HOOKS DEVEM VIR PRIMEIRO - NUNCA APÓS RETURNS CONDICIONAIS
   const [showDatabaseSetup, setShowDatabaseSetup] = useState(false)
   const [databaseReady, setDatabaseReady] = useState(false)
+  const [session, setSession] = useState(null)
+  const [sessionLoading, setSessionLoading] = useState(true)
+  const [showOKRManager, setShowOKRManager] = useState(false)
+  const [showOKRProgress, setShowOKRProgress] = useState(false)
+  const [showItemModal, setShowItemModal] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
+  const [currentProduct, setCurrentProduct] = useState('aplicativo')
+  const [currentSubProduct, setCurrentSubProduct] = useState('')
+  const [activePage, setActivePage] = useState('roadmap')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   
   const {
     roadmapItems,
@@ -34,22 +49,37 @@ function App() {
     deleteRoadmapItemsBulk
   } = useSupabaseData()
 
-  const [showOKRManager, setShowOKRManager] = useState(false)
-  const [showOKRProgress, setShowOKRProgress] = useState(false)
-  const [showItemModal, setShowItemModal] = useState(false)
-  const [editingItem, setEditingItem] = useState(null)
-  const [currentProduct, setCurrentProduct] = useState('aplicativo')
-  const [currentSubProduct, setCurrentSubProduct] = useState('geral')
+  // Estados adicionais para logo
   const [logoOk, setLogoOk] = useState(true)
   const [logoSrc, setLogoSrc] = useState('/starbem-logo-white.png')
   const [logoTriedFallback, setLogoTriedFallback] = useState(false)
 
-  // Verificar se o banco de dados está configurado
+  // Verificar sessão do usuário
   useEffect(() => {
-    checkDatabaseSetup()
+    const checkSession = () => {
+      const currentSession = getSession()
+      setSession(currentSession)
+      setSessionLoading(false)
+    }
+    
+    checkSession()
   }, [])
 
+  // Verificar se o banco de dados está configurado
+  useEffect(() => {
+    if (session) {
+      checkDatabaseSetup()
+    }
+  }, [session])
+
   const checkDatabaseSetup = async () => {
+    if (isMockMode()) {
+      // Em modo mock, não precisa verificar banco - já está "pronto"
+      console.log('🎭 Modo mock ativo - pulando verificação de banco')
+      setDatabaseReady(true)
+      return
+    }
+    
     try {
       // Tentar fazer uma consulta simples para verificar se as tabelas existem
       const { error: okrError } = await supabase
@@ -85,9 +115,26 @@ function App() {
     setDatabaseReady(true)
   }
 
-  const session = getSession()
+  // Loading da sessão
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-company-dark-blue mb-4">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto" />
+          </div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Se não houver sessão, mostrar login
   if (!session) {
-    return <Login onSuccess={() => window.location.reload()} />
+    return <Login onSuccess={(newSession) => {
+      setSession(newSession)
+      setSessionLoading(false)
+    }} />
   }
 
   // Se precisar configurar o banco, mostrar tela de configuração
@@ -182,15 +229,14 @@ function App() {
     return title
   }
 
-  const [activePage, setActivePage] = useState('roadmap')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  const canEdit = requireRole('editor')
+  const canEdit = session && requireRole('editor')
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className={`hidden sm:flex sticky top-0 h-screen shrink-0 overflow-y-auto flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 space-y-2 transition-all duration-200`}>
-        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center justify-center ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10`}>
+
+      <aside className={`hidden sm:flex sticky top-0 h-screen shrink-0 overflow-y-auto flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 transition-all duration-200`}>
+        {/* Header do Menu com Logo */}
+        <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center justify-center ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 mb-4`}>
           {sidebarOpen ? (
             logoOk ? (
               <img
@@ -210,40 +256,105 @@ function App() {
               <span className="inline-block" style={{width:20,height:20,background:'#FFFFFF',clipPath:'polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)'}} />
             )
           ) : (
-            <img src="/starbem-star-white.png" alt="Starbem" className="block h-6 w-6 object-contain" onError={(e)=>{ e.currentTarget.outerHTML = '<span style=\"display:inline-block;width:20px;height:20px;background:#FFFFFF;clip-path:polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)\"></span>' }} />
+            <img src="/starbem-star-white.png" alt="Starbem" className="block h-6 w-6 object-contain" onError={(e)=>{ e.currentTarget.outerHTML = '<span style="display:inline-block;width:20px;height:20px;background:#FFFFFF;clip-path:polygon(50% 0%, 61% 35%, 98% 38%, 70% 60%, 80% 95%, 50% 75%, 20% 95%, 30% 60%, 2% 38%, 39% 35%)"></span>' }} />
           )}
         </button>
-        <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
-          <Target className="h-5 w-5 text-white shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
-        </button>
-        {requireRole('admin') && (
-          <button onClick={()=>setActivePage('users')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
-            <Users className="h-5 w-5 shrink-0" />
-            <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
+
+        <div className="flex-1 space-y-1">
+          {/* Seção Administrador */}
+          {session && requireRole('admin') && (
+            <div className="mb-6">
+              <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+                <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                  Administrador
+                </div>
+                {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+              </div>
+              <button onClick={()=>setActivePage('users')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='users'?'bg-white/10':''}`}>
+                <Users className="h-5 w-5 shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Usuários</span>
+              </button>
+            </div>
+          )}
+
+          {/* Seção Produto */}
+          <div className="mb-6">
+            <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+              <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Produto
+              </div>
+              {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+            </div>
+            <div className="space-y-1">
+              <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
+                <Target className="h-5 w-5 text-white shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
+              </button>
+              {canEdit && (
+                <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+                  <BarChart3 className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
+                </button>
+              )}
+              {canEdit && (
+                <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
+                  <Settings className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Seção Times */}
+          <div className="mb-6">
+            <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+              <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Times
+              </div>
+              {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+            </div>
+            <div className="space-y-1">
+              <button onClick={()=>setActivePage('performance')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='performance'?'bg-white/10':''}`}>
+                <BarChart3 className="h-5 w-5 text-white shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Performance</span>
+              </button>
+              {canEdit && (
+                <button onClick={()=>setActivePage('metrics-admin')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='metrics-admin'?'bg-white/10':''}`}>
+                  <Settings className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar Métricas</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Seção Pessoal */}
+          <div className="mb-6">
+            <div className={`${sidebarOpen ? 'px-3 mb-2' : 'px-2 mb-1'}`}>
+              <div className={`text-xs font-semibold text-white/60 uppercase tracking-wider ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Pessoal
+              </div>
+              {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
+            </div>
+            <div className="space-y-1">
+              <button onClick={()=>setActivePage('career')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='career'?'bg-white/10':''}`}>
+                <TrendingUp className="h-5 w-5 text-white shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Carreira</span>
+              </button>
+              <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
+                <User className="h-5 w-5 shrink-0" />
+                <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout no final */}
+        <div className="pt-4 border-t border-white/10">
+          <button onClick={()=>{ logout(); window.location.reload() }} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 text-red-200`}>
+            <LogOut className="h-5 w-5 shrink-0" />
+            <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
           </button>
-        )}
-        {canEdit && (
-        <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
-          <BarChart3 className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
-        </button>
-        )}
-        {canEdit && (
-        <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
-          <Settings className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
-        </button>
-        )}
-        <button onClick={()=>setActivePage('profile')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='profile'?'bg-white/10':''}`}>
-          <User className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Edição de Perfil</span>
-        </button>
-        <div className="pt-6" />
-        <button onClick={()=>{ logout(); window.location.reload() }} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 text-red-200 mt-auto`}>
-          <LogOut className="h-5 w-5 shrink-0" />
-          <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
-        </button>
+        </div>
       </aside>
       <div className="flex-1">
       {/* Header */}
@@ -253,6 +364,15 @@ function App() {
             <h1 className="text-xl sm:text-2xl font-bold text-white">
               {activePage==='roadmap' && (
                 <>Roadmap Interativo - {getPageTitle()}</>
+              )}
+              {activePage==='career' && (
+                <>Trilha de Carreira</>
+              )}
+              {activePage==='performance' && (
+                <>Dashboard de Performance</>
+              )}
+              {activePage==='metrics-admin' && (
+                <>Gerenciar Métricas</>
               )}
               {activePage==='users' && (
                 <>Gerenciar Usuários</>
@@ -265,6 +385,12 @@ function App() {
               )}
             </h1>
             <div className="flex space-x-3">
+              {isMockMode() && (
+                <div className="text-blue-200 text-sm bg-blue-600 px-3 py-1 rounded flex items-center gap-2">
+                  <span>🎭</span>
+                  <span>Modo Desenvolvimento</span>
+                </div>
+              )}
               {error && (
                 <div className="text-red-300 text-sm bg-red-600 px-3 py-1 rounded">
                   Erro: {error}
@@ -335,7 +461,20 @@ function App() {
             />
           </>
         )}
-        {activePage==='users' && requireRole('admin') && (
+        {activePage==='career' && (
+          <YCareerDiagram user={mockUser} />
+        )}
+        {activePage==='performance' && (
+          <div className="bg-white rounded-lg shadow-sm">
+            <PerformanceDashboard user={mockUser} />
+          </div>
+        )}
+        {activePage==='metrics-admin' && canEdit && (
+          <div className="bg-white rounded-lg shadow-sm">
+            <MetricsAdmin user={mockUser} />
+          </div>
+        )}
+        {activePage==='users' && session && requireRole('admin') && (
           <UsersAdmin />
         )}
         {activePage==='okrs' && (

@@ -96,6 +96,42 @@ const DatabaseSetup = ({ onSetupComplete }) => {
         }
       }
 
+      // Criar tabela solicitacoes
+      setSetupStatus('Criando tabela de solicitações...')
+      const { error: requestsError } = await supabase.rpc('exec_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS solicitacoes (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID,
+            nome_solicitante VARCHAR(255) NOT NULL,
+            email_solicitante VARCHAR(255) NOT NULL,
+            departamento VARCHAR(255),
+            produto VARCHAR(100) NOT NULL,
+            sub_produto VARCHAR(100),
+            titulo VARCHAR(255) NOT NULL,
+            descricao TEXT,
+            retorno_esperado TEXT,
+            file_url TEXT,
+            file_name TEXT,
+            file_type TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `
+      })
+
+      if (requestsError) {
+        console.log('Tentativa de criar tabela solicitacoes via RPC falhou, testando existência...')
+        const { error: testReqError } = await supabase
+          .from('solicitacoes')
+          .select('id')
+          .limit(1)
+
+        if (testReqError && testReqError.code === '42P01') {
+          throw new Error('Tabela solicitacoes não existe e não foi possível criá-la automaticamente. Execute o script SQL manualmente no Supabase.')
+        }
+      }
+
       setSetupStatus('Configuração concluída com sucesso!')
       setTimeout(() => {
         onSetupComplete()

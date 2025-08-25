@@ -103,8 +103,8 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     // Usar o ano das datas do item
     const itemYear = startDate.getFullYear()
     
-    const monthStart = new Date(year, month - 1, 1)
-    const monthEnd = new Date(year, month, 0)
+    const monthStart = new Date(itemYear, month - 1, 1)
+    const monthEnd = new Date(itemYear, month, 0)
     
     // Se o item não está ativo neste mês, retorna 0
     if (startDate > monthEnd || endDate < monthStart) return 0
@@ -201,6 +201,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
 
   // Calcular progresso da duração baseado no status
   const calculateDurationProgress = (item) => {
+    // Se o status for 'concluida', retornar 100% automaticamente
+    if (item.status === 'concluida') return 100
+    
     if (!item.dataInicio || !item.dataFim) return 0
     
     const startDate = new Date(item.dataInicio)

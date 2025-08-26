@@ -135,7 +135,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return quarterMonths.some(month => isItemActiveInMonth(item, month, itemYear))
   }
 
-  // Função de ordenação por prioridade de status e depois por data de início (mais antiga primeiro)
+  // Função de ordenação por prioridade de status, data de início e data de finalização
   const sortItems = (itemsToSort) => {
     return [...itemsToSort].sort((a, b) => {
       // Primeiro critério: prioridade do status
@@ -148,10 +148,18 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       
       // Segundo critério: data de início (mais antiga primeiro)
       const MAX_DATE = new Date(8640000000000000)
-      const dateA = a.dataInicio ? new Date(a.dataInicio) : MAX_DATE
-      const dateB = b.dataInicio ? new Date(b.dataInicio) : MAX_DATE
+      const startDateA = a.dataInicio ? new Date(a.dataInicio) : MAX_DATE
+      const startDateB = b.dataInicio ? new Date(b.dataInicio) : MAX_DATE
       
-      return dateA - dateB
+      if (startDateA.getTime() !== startDateB.getTime()) {
+        return startDateA - startDateB
+      }
+      
+      // Terceiro critério: data de finalização (mais antiga primeiro)
+      const endDateA = a.dataFim ? new Date(a.dataFim) : MAX_DATE
+      const endDateB = b.dataFim ? new Date(b.dataFim) : MAX_DATE
+      
+      return endDateA - endDateB
     })
   }
 
@@ -306,7 +314,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       </div>
 
       {/* Tabela do Roadmap */}
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="roadmap-table-container">
         <table className="roadmap-table">
           <colgroup>
             {canEdit && <col className="col-select" />}
@@ -350,7 +358,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           <tbody>
             {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan="8" className="text-center py-8 text-gray-500">
+                <td colSpan={canEdit ? 9 : 8} className="text-center py-8 text-gray-500">
                   Nenhum item encontrado para este trimestre
                 </td>
               </tr>
@@ -358,7 +366,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
               filteredItems.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   {canEdit && (
-                    <td className="text-center align-top">
+                    <td className="text-center align-middle">
                       <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={(e) => { setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id)) }} />
                     </td>
                   )}
@@ -368,17 +376,21 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                         {item.nome}
                       </button>
                       {item.subProduto && item.subProduto !== 'geral' && (
-                        <div className={`mt-1 text-xs text-white px-2 py-1 rounded inline-block ${SUBPRODUCT_COLORS[item.subProduto] || 'bg-gray-600'}`}>
-                          {formatSubProductLabel(item.subProduto)}
+                        <div className="mt-1 flex items-center gap-2">
+                          <div className={`text-xs text-white px-2 py-1 rounded inline-block ${SUBPRODUCT_COLORS[item.subProduto] || 'bg-gray-600'}`}>
+                            {formatSubProductLabel(item.subProduto)}
+                          </div>
+                          {item.dataInicio && item.dataFim && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>{formatDateRange(item)}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                       {/* Subitens removidos da coluna Item conforme solicitado */}
                       {item.dataInicio && item.dataFim && (
                         <div className="space-y-1">
-                          <div className="text-xs text-gray-500 flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{formatDateRange(item)}</span>
-                          </div>
                           <div className="duration-progress">
                             <div 
                               className="duration-progress-fill"
@@ -495,7 +507,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           ))}
         </div>
         <div className="mt-3 text-xs text-gray-600">
-          <p><strong>Ordenação:</strong> Concluída → Em finalização → Sprint Atual → Próxima Sprint → Não iniciado</p>
+          <p><strong>Ordenação:</strong> 1º Status (Concluída → Em finalização → Sprint Atual → Próxima Sprint → Não iniciado) → 2º Data de início (mais antiga primeiro) → 3º Data de finalização (mais antiga primeiro)</p>
           <p><strong>Período:</strong> Itens são exibidos apenas se estiverem ativos no trimestre selecionado</p>
         </div>
       </div>
@@ -560,6 +572,13 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                     <div className="duration-progress-fill" style={{ width: `${calculateDurationProgress(previewItem)}%` }}></div>
                     <div className="duration-progress-text">{calculateDurationProgress(previewItem)}%</div>
                   </div>
+                </div>
+              )}
+
+              {!!previewItem.descricao && (
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Descrição</div>
+                  <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.descricao}</div>
                 </div>
               )}
 

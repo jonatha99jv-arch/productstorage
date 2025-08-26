@@ -69,13 +69,16 @@ function App() {
   useEffect(() => {
     const checkSession = () => {
       const currentSession = getSession()
+      console.log('🔍 Sessão atual:', currentSession) // Debug
       setSession(currentSession)
       setSessionLoading(false)
       
       // Se tiver sessão mas não tiver nome, buscar do banco
       if (currentSession && !currentSession.nome) {
+        console.log('🔍 Sessão sem nome, tentando carregar:', currentSession)
         loadUserName(currentSession.id)
       } else if (currentSession?.nome) {
+        console.log('🔍 Sessão com nome:', currentSession.nome)
         setUserName(currentSession.nome)
       }
     }
@@ -86,6 +89,7 @@ function App() {
   // Buscar nome do usuário do banco
   const loadUserName = async (userId) => {
     try {
+      console.log('🔍 Tentando carregar nome do usuário:', userId)
       const { data, error } = await supabase
         .from('users')
         .select('nome')
@@ -100,15 +104,17 @@ function App() {
         const updatedSession = { ...session, nome: data.nome }
         setSession(updatedSession)
         localStorage.setItem('session', JSON.stringify(updatedSession))
+        console.log('✅ Nome carregado com sucesso:', data.nome)
       }
     } catch (err) {
-      console.error('Erro ao carregar nome do usuário:', err)
+      console.error('❌ Erro ao carregar nome do usuário:', err)
     }
   }
 
   // Verificar se o banco de dados está configurado
   useEffect(() => {
     if (session) {
+      console.log('🔍 Sessão no useEffect:', session)
       // Se a sessão tiver nome, usar
       if (session.nome) {
         setUserName(session.nome)
@@ -280,6 +286,15 @@ function App() {
   }
 
   const canEdit = session && requireRole('editor')
+  const isAdmin = session && requireRole('admin')
+  
+  // Debug das permissões
+  console.log('🔑 Permissões:', { 
+    session: !!session, 
+    canEdit, 
+    isAdmin, 
+    role: session?.role 
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -413,7 +428,7 @@ function App() {
       <div className="flex-1">
       {/* Header */}
       <header className="bg-company-dark-blue shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl sm:text-2xl font-bold text-white">
               {activePage==='roadmap' && (
@@ -446,7 +461,8 @@ function App() {
               {session && (
                 <div className="text-white text-sm bg-white/10 px-3 py-1 rounded flex items-center gap-2">
                   <span>👋</span>
-                  <span>Olá, {userName || 'Usuário'}</span>
+                  <span>Olá, {userName || session.nome || 'Usuário'}</span>
+                  <span className="text-xs opacity-75">({session.role})</span>
                 </div>
               )}
               {isMockMode() && (
@@ -491,7 +507,7 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-6 sm:px-8 lg:px-10 py-6">
         {activePage==='roadmap' && loading && (
           <div className="flex justify-center items-center py-8">
             <div className="flex items-center space-x-2">
@@ -502,7 +518,7 @@ function App() {
         )}
         
         {!loading && activePage==='roadmap' && (
-          <>
+          <div className="w-full">
             {/* Abas de Produtos */}
             <ProductTabs
               currentProduct={currentProduct}
@@ -523,7 +539,7 @@ function App() {
               onDeleteBulk={handleDeleteBulk}
               canEdit={canEdit}
             />
-          </>
+          </div>
         )}
         {activePage==='career' && (
           <YCareerDiagram user={mockUser} />

@@ -126,17 +126,22 @@ export const useSupabaseData = () => {
     // Descompactar descricao caso esteja em JSON com campos adicionais
     let inputOutputMetric = ''
     let teseProduto = ''
+    let descricao = ''
     try {
       if (dbItem.descricao && typeof dbItem.descricao === 'string' && dbItem.descricao.trim().startsWith('{')) {
         const extra = JSON.parse(dbItem.descricao)
         inputOutputMetric = extra.inputOutputMetric || ''
         teseProduto = extra.teseProduto || ''
+        descricao = extra.descricao || ''
       } else if (dbItem.descricao) {
+        // Compatibilidade antiga: descricao do banco era usada como teseProduto
         teseProduto = dbItem.descricao
+        descricao = ''
       }
     } catch (_) {
-      // Ignorar parse errors e manter descricao como teseProduto
+      // Ignorar parse errors e manter descricao antiga como teseProduto
       teseProduto = dbItem.descricao || ''
+      descricao = ''
     }
 
     // Reconstituir subitens e dataFim a partir de tags
@@ -190,6 +195,7 @@ export const useSupabaseData = () => {
       nome: dbItem.titulo || '',
       inputOutputMetric,
       teseProduto,
+      descricao,
       produto: normalizeProduct(dbItem.produto || 'aplicativo'),
       subProduto: normalizeSubProduct(dbItem.sub_produto || ''),
       status: dbItem.status || 'nao_iniciado',
@@ -206,7 +212,8 @@ export const useSupabaseData = () => {
     
     const descricao = JSON.stringify({
       inputOutputMetric: appItem.inputOutputMetric || '',
-      teseProduto: appItem.teseProduto || ''
+      teseProduto: appItem.teseProduto || '',
+      descricao: appItem.descricao || ''
     })
 
     const tags = Array.isArray(appItem.subitens) ? [...appItem.subitens] : []

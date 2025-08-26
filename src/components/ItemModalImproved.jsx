@@ -42,6 +42,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
     subitens: [''],
     inputOutputMetric: '',
     teseProduto: '',
+    descricao: '',
     dataFim: null,
     dataInicio: null,
     status: 'nao_iniciado',
@@ -61,6 +62,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
         subitens: item.subitens && item.subitens.length > 0 ? item.subitens : [''],
         inputOutputMetric: item.inputOutputMetric || '',
         teseProduto: item.teseProduto || '',
+        descricao: item.descricao || '',
         dataFim: item.dataFim ? new Date(item.dataFim) : null,
         dataInicio: item.dataInicio ? new Date(item.dataInicio) : null,
         status: item.status || 'nao_iniciado',
@@ -234,6 +236,17 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
               onChange={(e) => handleInputChange('teseProduto', e.target.value)}
               placeholder="Ex: Acreditamos que o novo app global melhora a experiência..."
               required
+            />
+          </div>
+
+          {/* Descrição (opcional) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="descricao">Descrição (opcional)</Label>
+            <Textarea
+              id="descricao"
+              value={formData.descricao}
+              onChange={(e) => handleInputChange('descricao', e.target.value)}
+              placeholder="Detalhes adicionais do item..."
             />
           </div>
 

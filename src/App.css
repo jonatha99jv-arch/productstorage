@@ -89,13 +89,13 @@
 .roadmap-table {
   border-collapse: collapse;
   width: 100%;
-  table-layout: fixed;
+  table-layout: fixed; /* Voltar para fixed para distribuir o espaço */
 }
 
 .roadmap-table th,
 .roadmap-table td {
   border: 1px solid #e2e8f0;
-  padding: 8px;
+  padding: 16px 12px;
   text-align: left;
   vertical-align: top;
 }
@@ -114,6 +114,22 @@
   z-index: 10;
 }
 
+/* Manter a primeira linha do cabeçalho (com T e setas) fixa no topo
+   e a linha dos meses fixa logo abaixo, evitando sobreposição */
+.roadmap-table thead tr:first-child th {
+  top: 0;
+  z-index: 12; /* acima da linha dos meses */
+}
+.roadmap-table thead tr:first-child .quarter-header {
+  position: sticky;
+  top: 0;            /* fixa o T com setas no topo */
+  z-index: 20;       /* garante ficar sobre a linha dos meses */
+}
+.roadmap-table thead tr:nth-child(2) th {
+  top: 34px; /* ajuste fino para eliminar espaço entre T e meses */
+  z-index: 11;
+}
+
 /* Cabeçalhos mesclados */
 .roadmap-table .merged-header {
   background-color: var(--company-dark-blue);
@@ -124,9 +140,8 @@
 }
 
 .roadmap-table .item-cell {
-  min-width: 260px;
-  max-width: 560px;
   word-wrap: break-word;
+  padding: 16px 12px;
 }
 
 .roadmap-table .quarter-header {
@@ -145,27 +160,27 @@
   text-align: center;
   font-size: 0.675rem;
   font-weight: 500;
-  width: 44px;
+  width: auto;
   white-space: nowrap;
   padding: 2px;
 }
 
 .roadmap-table .month-cell {
-  width: 44px;
+  width: auto;
   height: 40px;
-  padding: 2px;
+  padding: 0;
   position: relative;
 }
 
 /* Controle de largura das colunas dos meses */
 .roadmap-table col.col-month { 
-  width: 44px !important; 
+  width: auto !important; 
 }
 
 /* Status visual - quadrados coloridos com preenchimento proporcional */
 .status-visual {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   transition: opacity 0.2s;
   display: flex;
@@ -357,8 +372,91 @@
 
 /* Garantir que as colunas dos meses tenham largura fixa */
 .roadmap-table th.month-header {
-  width: 44px;
-  min-width: 44px;
-  max-width: 44px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+
+/* Definições de largura para todas as colunas - ocupando todo o espaço */
+.roadmap-table .col-select {
+  width: 60px;
+}
+
+.roadmap-table .col-item {
+  width: 20%;
+}
+
+.roadmap-table .col-month {
+  width: 7%;
+}
+
+.roadmap-table .col-okr {
+  width: 12%;
+}
+
+.roadmap-table .col-metric {
+  width: 22%;
+}
+
+.roadmap-table .col-tese {
+  width: 25%;
+}
+
+.roadmap-table .col-actions {
+  width: 96px;
+}
+
+/* Ajustar largura da coluna de meses */
+.roadmap-table .month-cell {
+  height: 40px;
+  padding: 8px 4px;
+  position: relative;
+}
+
+.roadmap-table .month-header {
+  background-color: #f8fafc;
+  color: var(--company-dark-blue);
+  text-align: center;
+  font-size: 0.675rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 4px;
+}
+
+/* Aumentar largura da coluna de seleção */
+.roadmap-table .w-10 {
+  width: 40px !important;
+}
+
+/* Sync header helper width for actions */
+.roadmap-table .w-24 {
+  width: 96px !important;
+}
+
+/* Container da tabela ocupando todo o espaço */
+.roadmap-table-container {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Ajustes finos: preenchimento quase total e cantos suavemente arredondados nas células do trimestre */
+.roadmap-table .month-cell {
+  padding: 4px; /* pequeno respiro para a cor não colar na borda da célula */
+}
+
+.status-visual {
+  border-radius: 6px; /* cantos levemente arredondados como antes */
+}
+
+.roadmap-table .col-select,
+.roadmap-table td.text-center {
+  text-align: center;
+}
+
+.roadmap-table td.align-middle {
+  vertical-align: middle;
 }
 

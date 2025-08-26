@@ -15,7 +15,7 @@ const REQUIRED_HEADERS = [
 ]
 
 // Cabeçalhos opcionais
-const OPTIONAL_HEADERS = ['Subproduto', 'Duração'] // Manter 'Duração' como opcional para compatibilidade
+const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição'] // 'Descrição' é opcional
 
 const subProductMap = {
   'geral': 'geral',
@@ -103,6 +103,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const duracao = String(row[idx['Duração']] || '').trim() // Manter para compatibilidade
         const metric = String(row[idx['Input/Output Metric']] || '').trim()
         const tese = String(row[idx['Tese de Produto']] || '').trim()
+        const descricao = idx['Descrição'] != null ? String(row[idx['Descrição']] || '').trim() : ''
         const statusLabel = String(row[idx['Status']] || '').trim()
         const produto = normalizeProduct(row[idx['Produto']])
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
@@ -143,6 +144,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           nome: item,
           inputOutputMetric: metric,
           teseProduto: tese,
+          descricao,
           dataFim,
           dataInicio,
           status: statusMap[statusLabel] || 'nao_iniciado',

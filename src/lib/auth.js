@@ -34,6 +34,13 @@ const mockUsers = [
     password: 'dev123', 
     role: 'admin',
     name: 'Desenvolvedor'
+  },
+  { 
+    id: '5', 
+    email: 'jonatha.vieira@starbem.app', 
+    password: 'Teste123', 
+    role: 'admin',
+    name: 'Jonatha Vieira'
   }
 ]
 
@@ -43,7 +50,7 @@ export async function login(email, password) {
     console.log('🚀 Usando autenticação MOCK para desenvolvimento local')
     console.log('👤 Usuários disponíveis:')
     mockUsers.forEach(user => {
-      console.log(`   ${user.email} / ${user.password} (${user.role})`)
+      console.log(`   ${user.email} / ${user.password} (${user.role}) - ${user.name}`)
     })
     
     // Simular delay de rede
@@ -58,10 +65,11 @@ export async function login(email, password) {
       id: user.id, 
       email: user.email, 
       role: user.role, 
-      name: user.name,
+      nome: user.name, // Usar 'nome' para consistência
       isMock: true 
     }
     localStorage.setItem('session', JSON.stringify(session))
+    console.log('✅ Sessão mock criada:', session)
     return session
   }
   
@@ -80,6 +88,7 @@ export async function login(email, password) {
   if (!ok) throw new Error('Credenciais inválidas')
   const session = { id: user.id, nome: user.nome, email: user.email, role: user.role }
   localStorage.setItem('session', JSON.stringify(session))
+  console.log('✅ Sessão real criada:', session)
   return session
 }
 
@@ -89,13 +98,20 @@ export function logout() {
 
 export function getSession() {
   const s = localStorage.getItem('session')
-  return s ? JSON.parse(s) : null
+  const parsed = s ? JSON.parse(s) : null
+  console.log('🔍 getSession retornou:', parsed)
+  return parsed
 }
 
 export function requireRole(minRole) {
   const order = { viewer: 1, editor: 2, admin: 3 }
   const s = getSession()
+  console.log('🔐 requireRole:', { minRole, session: s, hasRole: s?.role, order: order[s?.role] }) // Debug
   if (!s) return false
+  if (!s.role) {
+    console.error('❌ Sessão sem role:', s)
+    return false
+  }
   return order[s.role] >= order[minRole]
 }
 

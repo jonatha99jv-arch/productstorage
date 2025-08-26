@@ -69,6 +69,7 @@ const formatSubProductLabel = (value) => {
 const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('todos')
   const [selectedIds, setSelectedIds] = useState([])
   const [previewItem, setPreviewItem] = useState(null)
 
@@ -123,16 +124,22 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return activeDays / daysInMonth
   }
 
-  // Função para verificar se um item deve ser exibido no trimestre atual
+  // Verificar se o item tem qualquer sobreposição com os meses do trimestre, considerando mudanças de ano
   const shouldShowItemInQuarter = (item, quarter) => {
-    if (!item.dataInicio || !item.dataFim) return true // Mostrar itens sem data
-    
-    // Usar o ano das datas do item, não o ano atual
-    const itemYear = new Date(item.dataInicio).getFullYear()
+    if (!item.dataInicio || !item.dataFim) return true
     const quarterMonths = QUARTERS[quarter].monthNumbers
-    
-    // Verificar se o item está ativo em pelo menos um mês do trimestre
-    return quarterMonths.some(month => isItemActiveInMonth(item, month, itemYear))
+    const start = new Date(item.dataInicio)
+    const end = new Date(item.dataFim)
+    // Normalizar para o primeiro/último dia dos meses
+    let cursor = new Date(start.getFullYear(), start.getMonth(), 1)
+    const endMonthEdge = new Date(end.getFullYear(), end.getMonth(), 1)
+    while (cursor <= endMonthEdge) {
+      const monthNum = cursor.getMonth() + 1
+      if (quarterMonths.includes(monthNum)) return true
+      // avançar 1 mês
+      cursor.setMonth(cursor.getMonth() + 1)
+    }
+    return false
   }
 
   // Função de ordenação por prioridade de status, data de início e data de finalização
@@ -180,9 +187,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
         return true
       })()
 
+      const statusValue = (item.status || '').toString().toLowerCase()
+      const matchesStatus = (
+        statusFilter === 'concluidos' ? statusValue === 'concluida'
+        : statusFilter === 'ativos' ? statusValue !== 'concluida'
+        : true
+      )
+
+      // Sempre respeitar o trimestre selecionado
       const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter)
 
-      return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter
+      return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter && matchesStatus
     })
 
     return sortItems(filtered)
@@ -286,6 +301,19 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                     {quarter.label}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-company-dark-blue">Status:</label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="concluidos">Concluídos</SelectItem>
+                <SelectItem value="ativos">Ativos</SelectItem>
               </SelectContent>
             </Select>
           </div>

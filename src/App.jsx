@@ -527,7 +527,6 @@ function App() {
               onSubProductChange={handleSubProductChange}
             />
 
-            {/* Tabela do Roadmap */}
             <RoadmapTableImproved
               items={getFilteredItems()}
               okrs={okrs}

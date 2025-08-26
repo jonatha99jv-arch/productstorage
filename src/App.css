@@ -408,6 +408,7 @@
 
 /* Ajustar largura da coluna de meses */
 .roadmap-table .month-cell {
+  width: auto;
   height: 40px;
   padding: 8px 4px;
   position: relative;

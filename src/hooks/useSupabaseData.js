@@ -75,6 +75,8 @@ export const useSupabaseData = () => {
   const [okrs, setOkrs] = useState([])
   const [solicitacoes, setSolicitacoes] = useState([])
   const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([])
+  const [solicitacaoVotes, setSolicitacaoVotes] = useState({}) // { solicitacao_id: count }
+  const [mySolicitacaoVotes, setMySolicitacaoVotes] = useState({}) // { solicitacao_id: true }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -82,6 +84,7 @@ export const useSupabaseData = () => {
   useEffect(() => {
     loadData()
     loadSolicitacoes()
+    loadSolicitacaoVotes?.()
   }, [])
 
   // Normalização de texto (remove acentos, lowercase, trim)
@@ -376,10 +379,71 @@ export const useSupabaseData = () => {
       } else {
         setMinhasSolicitacoes([])
       }
+
+      // carregar votos após carregar solicitações
+      await loadSolicitacaoVotes()
     } catch (err) {
       console.error('Erro geral ao carregar solicitações:', err)
       setSolicitacoes([])
       setMinhasSolicitacoes([])
+    }
+  }
+
+  const loadSolicitacaoVotes = async () => {
+    try {
+      const session = getSession()
+      const userId = session?.id || null
+      const { data, error } = await supabase
+        .from('solicitacao_votes')
+        .select('solicitacao_id, user_id')
+      if (error) throw error
+      const counts = {}
+      const mine = {}
+      ;(data || []).forEach(v => {
+        counts[v.solicitacao_id] = (counts[v.solicitacao_id] || 0) + 1
+        if (v.user_id && userId && v.user_id === userId) {
+          mine[v.solicitacao_id] = true
+        }
+      })
+      setSolicitacaoVotes(counts)
+      setMySolicitacaoVotes(mine)
+    } catch (e) {
+      console.warn('Falha ao carregar votos:', e)
+      setSolicitacaoVotes({})
+      setMySolicitacaoVotes({})
+    }
+  }
+
+  const toggleSolicitacaoVote = async (solicitacaoId) => {
+    const session = getSession()
+    const userId = session?.id
+    if (!userId) {
+      alert('É necessário estar autenticado para votar.')
+      return
+    }
+    const hasVoted = !!mySolicitacaoVotes[solicitacaoId]
+    try {
+      if (hasVoted) {
+        const { error } = await supabase
+          .from('solicitacao_votes')
+          .delete()
+          .eq('solicitacao_id', solicitacaoId)
+          .eq('user_id', userId)
+        if (error) throw error
+        setMySolicitacaoVotes(prev => ({ ...prev, [solicitacaoId]: undefined }))
+        setSolicitacaoVotes(prev => ({ ...prev, [solicitacaoId]: Math.max((prev[solicitacaoId] || 1) - 1, 0) }))
+      } else {
+        const { error } = await supabase
+          .from('solicitacao_votes')
+          .insert([{ solicitacao_id: solicitacaoId, user_id: userId }])
+        if (error) throw error
+        setMySolicitacaoVotes(prev => ({ ...prev, [solicitacaoId]: true }))
+        setSolicitacaoVotes(prev => ({ ...prev, [solicitacaoId]: (prev[solicitacaoId] || 0) + 1 }))
+      }
+    } catch (e) {
+      console.error('Erro ao alternar voto:', e)
+      // Reload para garantir consistência em caso de erro
+      await loadSolicitacaoVotes()
     }
   }
 
@@ -742,6 +806,8 @@ export const useSupabaseData = () => {
     okrs,
     solicitacoes,
     minhasSolicitacoes,
+    solicitacaoVotes,
+    mySolicitacaoVotes,
     loading,
     error,
     saveRoadmapItem,
@@ -752,8 +818,10 @@ export const useSupabaseData = () => {
     deleteOKR,
     reloadData: loadData,
     loadSolicitacoes,
+    loadSolicitacaoVotes,
     deleteOwnSolicitacao,
     createSolicitacao,
+    toggleSolicitacaoVote,
     /**
      * Upsert por chave natural: titulo + produto + data_inicio
      * Evita duplicação em importações

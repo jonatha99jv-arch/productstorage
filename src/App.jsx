@@ -128,6 +128,14 @@ function App() {
     }
   }, [session])
 
+  // Recarregar solicitações e votos quando logar ou ao abrir a aba de solicitações
+  useEffect(() => {
+    if (activePage === 'requests') {
+      try { loadSolicitacoes() } catch(_) {}
+      try { loadSolicitacaoVotes() } catch(_) {}
+    }
+  }, [activePage])
+
   const checkDatabaseSetup = async () => {
     if (isMockMode()) {
       // Em modo mock, não precisa verificar banco - já está "pronto"
@@ -286,6 +294,14 @@ function App() {
   }
 
   const canEdit = session && requireRole('editor')
+
+  // Derivar minhas solicitações diretamente do estado atual + sessão (sem hooks)
+  const myRequests = (() => {
+    const all = Array.isArray(solicitacoes) ? solicitacoes : []
+    const uid = session?.id
+    const email = session?.email
+    return all.filter(s => (uid && s.user_id === uid) || (email && s.email_solicitante === email))
+  })()
   const isAdmin = session && requireRole('admin')
   
   // Debug das permissões
@@ -570,16 +586,24 @@ function App() {
           <ErrorBoundary>
             <RequestsPage
               solicitacoes={solicitacoes || []}
-              minhasSolicitacoes={minhasSolicitacoes || []}
+              minhasSolicitacoes={myRequests || []}
               produtos={[ 'aplicativo','web','parcerias','ai','automacao' ]}
               subProdutos={{
                 web: ['geral','backoffice','portal_estrela','doctor','company'],
                 aplicativo: ['geral','brasil','global']
               }}
-              onDeleteOwn={async (id)=>{ try { await deleteOwnSolicitacao(id) } catch(_) {} }}
+              solicitacaoVotes={solicitacaoVotes || {}}
+              mySolicitacaoVotes={mySolicitacaoVotes || {}}
+              onToggleVote={async (id)=>{ try { await toggleSolicitacaoVote(id); await loadSolicitacaoVotes() } catch(_) {} }}
+              onDeleteOwn={async (id)=>{ try { await deleteOwnSolicitacao(id); await loadSolicitacoes(); await loadSolicitacaoVotes() } catch(_) {} }}
               onCreate={async (payload, file) => {
-                try { await createSolicitacao(payload, file) } catch(_) {}
+                try { 
+                  await createSolicitacao(payload, file);
+                  await loadSolicitacoes();
+                  await loadSolicitacaoVotes();
+                } catch(_) {}
               }}
+              onInitRefresh={async ()=>{ try { await loadSolicitacoes(); await loadSolicitacaoVotes(); await loadSolicitacoes(); } catch(_) {} }}
             />
           </ErrorBoundary>
         )}

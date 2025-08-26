@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -53,6 +53,15 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [calendarFimOpen, setCalendarFimOpen] = useState(false)
+  const [errors, setErrors] = useState({})
+
+  // Refs para focar/rolar até o primeiro campo inválido
+  const nomeRef = useRef(null)
+  const produtoRef = useRef(null)
+  const metricRef = useRef(null)
+  const teseRef = useRef(null)
+  const dataInicioBtnRef = useRef(null)
+  const dataFimBtnRef = useRef(null)
 
   useEffect(() => {
     if (item) {
@@ -78,6 +87,8 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
       ...prev,
       [field]: value
     }))
+
+    setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
   const handleSubitemChange = (index, value) => {
@@ -109,19 +120,43 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     
-    if (!formData.nome.trim() || !formData.inputOutputMetric.trim() || !formData.teseProduto.trim()) {
-      alert('Por favor, preencha todos os campos obrigatórios.')
-      return
-    }
+    const newErrors = {}
+    if (!formData.nome.trim()) newErrors.nome = 'Campo obrigatório.'
+    if (!formData.produto) newErrors.produto = 'Campo obrigatório.'
+    if (!formData.inputOutputMetric.trim()) newErrors.inputOutputMetric = 'Campo obrigatório.'
+    if (!formData.teseProduto.trim()) newErrors.teseProduto = 'Campo obrigatório.'
+    if (!formData.dataInicio) newErrors.dataInicio = 'Campo obrigatório.'
+    if (!formData.dataFim) newErrors.dataFim = 'Campo obrigatório.'
 
-    // Validação adicional para datas
     if (formData.dataInicio && formData.dataFim) {
       const inicio = new Date(formData.dataInicio)
       const fim = new Date(formData.dataFim)
       if (fim <= inicio) {
-        alert('A data final deve ser posterior à data de início.')
-        return
+        newErrors.dataFim = 'A data final deve ser posterior à data de início.'
       }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      // Focar/rolar para o primeiro campo inválido
+      const order = ['nome', 'produto', 'inputOutputMetric', 'teseProduto', 'dataInicio', 'dataFim']
+      const firstInvalid = order.find((f) => newErrors[f])
+      const refMap = {
+        nome: nomeRef,
+        produto: produtoRef,
+        inputOutputMetric: metricRef,
+        teseProduto: teseRef,
+        dataInicio: dataInicioBtnRef,
+        dataFim: dataFimBtnRef,
+      }
+      const target = refMap[firstInvalid]?.current
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (typeof target.focus === 'function') target.focus()
+      }
+      if (newErrors.dataInicio) setCalendarOpen(true)
+      if (newErrors.dataFim) setCalendarFimOpen(true)
+      return
     }
 
     const dataToSave = {
@@ -157,11 +192,14 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="nome">Novo Item *</Label>
             <Input
               id="nome"
+              ref={nomeRef}
               value={formData.nome}
               onChange={(e) => handleInputChange('nome', e.target.value)}
               placeholder="Ex: Novo Aplicativo Global"
               required
+              className={errors.nome ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {errors.nome && (<p className="text-red-600 text-sm mt-1">{errors.nome}</p>)}
           </div>
 
           {/* Produto */}
@@ -170,6 +208,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <div className="relative">
               <select
                 id="produto"
+                ref={produtoRef}
                 value={formData.produto}
                 onChange={(e) => {
                   handleInputChange('produto', e.target.value)
@@ -179,7 +218,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
                     handleInputChange('subProduto', '')
                   }
                 }}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
+                className={`w-full p-2 pr-10 border rounded-md appearance-none ${errors.produto ? 'border-red-500' : 'border-gray-300'}`}
                 required
               >
               {PRODUCT_OPTIONS.map(option => (
@@ -220,11 +259,14 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="metric">Métrica Input/Output *</Label>
             <Textarea
               id="metric"
+              ref={metricRef}
               value={formData.inputOutputMetric}
               onChange={(e) => handleInputChange('inputOutputMetric', e.target.value)}
               placeholder="Ex: Aumentar em 10% a taxa de NPS em 3 meses"
               required
+              className={errors.inputOutputMetric ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {errors.inputOutputMetric && (<p className="text-red-600 text-sm mt-1">{errors.inputOutputMetric}</p>)}
           </div>
 
           {/* Tese de Produto */}
@@ -232,11 +274,14 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="tese">Tese de Produto *</Label>
             <Textarea
               id="tese"
+              ref={teseRef}
               value={formData.teseProduto}
               onChange={(e) => handleInputChange('teseProduto', e.target.value)}
               placeholder="Ex: Acreditamos que o novo app global melhora a experiência..."
               required
+              className={errors.teseProduto ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {errors.teseProduto && (<p className="text-red-600 text-sm mt-1">{errors.teseProduto}</p>)}
           </div>
 
           {/* Descrição (opcional) */}
@@ -287,12 +332,13 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
           {/* Data de Início */}
           <div className="space-y-1.5">
-            <Label>Data de Início</Label>
+            <Label>Data de Início *</Label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal"
+                  ref={dataInicioBtnRef}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.dataInicio ? (
@@ -314,16 +360,19 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
                 />
               </PopoverContent>
             </Popover>
+            {errors.dataInicio && (<p className="text-red-600 text-sm mt-1">{errors.dataInicio}</p>)}
           </div>
 
           {/* Data Final */}
           <div className="space-y-1.5">
-            <Label>Data Final</Label>
+            <Label>Data Final *</Label>
             <Popover open={calendarFimOpen} onOpenChange={setCalendarFimOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal"
+                  ref={dataFimBtnRef}
+                  
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.dataFim ? (
@@ -345,6 +394,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
                 />
               </PopoverContent>
             </Popover>
+            {errors.dataFim && (<p className="text-red-600 text-sm mt-1">{errors.dataFim}</p>)}
           </div>
 
           {/* Status */}

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Activity,
   TrendingUp,
@@ -12,292 +13,413 @@ import {
   Users,
   BarChart3,
   RefreshCw,
-  Info
+  Info,
+  ChevronDown,
+  Target,
+  Loader2
 } from 'lucide-react'
-import { performanceData, getTeamStatusColor, getTrendColor } from '../data/performanceData'
+import { metricsConfig } from '../data/sprintMetricsData'
+import { useSprintMetrics } from '../hooks/useSprintMetrics'
 
 export const PerformanceDashboard = ({ user }) => {
   const [activeTab, setActiveTab] = useState('resumo')
-  const [lastRefresh, setLastRefresh] = useState(performanceData.lastUpdate)
+  const [selectedSprints, setSelectedSprints] = useState({})
+  const [lastRefresh, setLastRefresh] = useState(new Date().toLocaleTimeString('pt-BR'))
+
+  // Hook do Supabase
+  const { 
+    teams, 
+    sprintData, 
+    loading, 
+    error, 
+    loadTeamSprints, 
+    calculateComparison,
+    getTeamSprints,
+    getSprintData,
+    initialized 
+  } = useSprintMetrics()
+
+  // Carregar dados dos times quando necessário
+  useEffect(() => {
+    if (initialized && teams.length > 0) {
+      // Carregar sprints para todos os times
+      teams.forEach(team => {
+        if (!sprintData[team.id] || sprintData[team.id].length === 0) {
+          loadTeamSprints(team.id)
+        }
+      })
+    }
+  }, [initialized, teams])
+
+  // Inicializar sprints selecionados para cada time (mais recente)
+  useEffect(() => {
+    if (teams.length > 0 && Object.keys(selectedSprints).length === 0) {
+      const initialSprints = {}
+      teams.forEach(team => {
+        const sprints = getTeamSprints(team.id)
+        if (sprints.length > 0) {
+          initialSprints[team.id] = sprints[0] // Sprint mais recente
+        }
+      })
+      setSelectedSprints(initialSprints)
+    }
+  }, [teams, sprintData])
 
   const tabs = [
     { id: 'resumo', label: 'Resumo Executivo', icon: BarChart3 },
     { id: 'aplicativo', label: 'Time Aplicativo', icon: Activity },
     { id: 'integracoes', label: 'Time Integrações', icon: Users },
     { id: 'web', label: 'Time Web', icon: TrendingUp },
-    { id: 'metricas', label: 'Métricas', icon: BarChart3 }
   ]
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setLastRefresh(new Date().toLocaleTimeString('pt-BR'))
-    // Em produção, aqui seria feita a chamada para o Supabase
+    
+    // Recarregar sprints para todos os times
+    for (const team of teams) {
+      await loadTeamSprints(team.id)
+    }
   }
 
-  const MetricCard = ({ title, metric, subtitle, isPositiveMetric = true }) => {
+  const handleSprintChange = (teamId, sprintName) => {
+    setSelectedSprints(prev => ({
+      ...prev,
+      [teamId]: sprintName
+    }))
+  }
+
+  const getMetricIcon = (metricKey) => {
+    const iconMap = {
+      cycleTime: Clock,
+      velocity: TrendingUp,
+      wip: Activity,
+      bugRate: AlertTriangle,
+      timeToResolveBugs: Clock,
+      scopeCreep: Target
+    }
+    return iconMap[metricKey] || Info
+  }
+
+  const getTrendColor = (comparison) => {
+    if (!comparison) return 'text-gray-500'
+    return comparison.isImprovement ? 'text-green-600' : 'text-red-600'
+  }
+
+  const getTrendIcon = (comparison) => {
+    if (!comparison) return null
+    // Melhorou = seta para cima (verde), Piorou = seta para baixo (vermelho)
+    return comparison.isImprovement ? TrendingUp : TrendingDown
+  }
+
+  const formatTrendPercentage = (comparison) => {
+    if (!comparison) return '-'
+    const sign = comparison.isImprovement ? '+' : '-'
+    return `${sign}${comparison.percentageChange.toFixed(1)}%`
+  }
+
+  const MetricCard = ({ teamId, metricKey, sprintData, comparison }) => {
+    const config = metricsConfig[metricKey]
+    const Icon = getMetricIcon(metricKey)
+    const TrendIcon = getTrendIcon(comparison)
+    const metric = sprintData?.metrics[metricKey]
+    
     if (!metric) return null
 
     return (
-      <Card className="p-6 border-l-4 border-l-orange-500">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-600 mb-1">{title}</h3>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
-              {metric.current}
+      <Card className="p-4 hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Icon className="w-4 h-4 text-gray-600" />
             </div>
-            {subtitle && (
-              <div className="text-xs text-gray-500">{subtitle}</div>
-            )}
+            <div>
+              <h3 className="font-medium text-gray-900 text-sm">{config.name}</h3>
+              <p className="text-xs text-gray-500">{config.description}</p>
+            </div>
           </div>
-          {metric.trend !== null && (
-            <div className={`flex items-center gap-1 text-sm font-medium ${getTrendColor(metric.trend, isPositiveMetric)}`}>
-              {metric.trend > 0 ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : metric.trend < 0 ? (
-                <TrendingDown className="w-4 h-4" />
-              ) : null}
-              {Math.abs(metric.trend)}%
+        </div>
+        
+        <div className="mt-4 flex items-end justify-between">
+          <div>
+            <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
+          </div>
+          
+          {comparison && (
+            <div className={`flex items-center gap-1 ${getTrendColor(comparison)}`}>
+              {TrendIcon && <TrendIcon className="w-4 h-4" />}
+              <span className="text-sm font-medium">
+                {formatTrendPercentage(comparison)}
+              </span>
             </div>
           )}
         </div>
+        
+        {comparison && (
+          <div className="mt-2 text-xs text-gray-500">
+            vs Sprint anterior: {comparison.previous}
+          </div>
+        )}
       </Card>
     )
   }
 
-  const InsightsList = ({ insights }) => {
-    const getInsightIcon = (type) => {
-      switch (type) {
-        case 'success': return <CheckCircle className="w-4 h-4 text-green-600" />
-        case 'warning': return <AlertTriangle className="w-4 h-4 text-yellow-600" />
-        case 'info': return <Info className="w-4 h-4 text-blue-600" />
-        default: return <Info className="w-4 h-4 text-gray-600" />
+  const TeamDashboard = ({ teamId }) => {
+    const team = teams.find(t => t.id === teamId)
+    const sprints = getTeamSprints(teamId)
+    const selectedSprintName = selectedSprints[teamId] || sprints[0]
+    const currentSprintData = getSprintData(teamId, selectedSprintName)
+    const [comparison, setComparison] = useState(null)
+
+    // Carregar comparação quando dados mudarem
+    useEffect(() => {
+      if (currentSprintData) {
+        calculateComparison(teamId, currentSprintData).then(setComparison)
       }
+    }, [teamId, currentSprintData])
+
+    if (!team) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-500">Time não encontrado</p>
+        </div>
+      )
+    }
+
+    if (loading && sprints.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            <span className="text-gray-600">Carregando dados do time...</span>
+          </div>
+        </div>
+      )
+    }
+
+    if (sprints.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <Target className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma Sprint Cadastrada</h3>
+          <p className="text-gray-600 mb-4">
+            Este time ainda não possui sprints cadastradas no sistema.
+          </p>
+          <Badge variant="outline">
+            Use o Gerenciamento de Métricas para adicionar dados
+          </Badge>
+        </div>
+      )
+    }
+
+    if (!currentSprintData) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-500">Dados da sprint não disponíveis</p>
+        </div>
+      )
     }
 
     return (
-      <div className="mt-8">
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-          <Info className="w-5 h-5 text-orange-600" />
-          Insights & Recomendações
-        </h3>
-        <div className="space-y-3">
-          {insights.map((insight, index) => (
-            <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-              {getInsightIcon(insight.type)}
-              <span className="text-sm text-gray-700 leading-relaxed">
-                {insight.text}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  const TeamDashboard = ({ teamId }) => {
-    const team = performanceData.teams[teamId]
-    if (!team) return null
-
-    return (
-      <div className="space-y-8">
-        {/* Header do Time */}
-        <div className="bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 text-white p-6 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">{team.name}</h2>
-              <p className="text-white/90">Período: {performanceData.period}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              <Badge className="bg-white/20 text-white border-white/30">
-                {team.status.charAt(0).toUpperCase() + team.status.slice(1)}
-              </Badge>
-            </div>
+      <div className="space-y-6">
+        {/* Header com seletor de sprint */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">{team.name}</h2>
+            <p className="text-gray-600">Métricas de performance da sprint</p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Sprint:</span>
+            <Select
+              value={selectedSprintName}
+              onValueChange={(value) => handleSprintChange(teamId, value)}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Selecione uma sprint" />
+              </SelectTrigger>
+              <SelectContent>
+                {sprints.map(sprintName => (
+                  <SelectItem key={sprintName} value={sprintName}>
+                    {sprintName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Grid de Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <MetricCard 
-            title="Cycle Time" 
-            metric={team.metrics.cycleTime}
-            subtitle={`Anterior: ${team.metrics.cycleTime.previous || 'N/A'}`}
-            isPositiveMetric={false}
-          />
-          <MetricCard 
-            title="Velocity" 
-            metric={team.metrics.velocity}
-            subtitle={`Anterior: ${team.metrics.velocity.previous || 'N/A'}`}
-          />
-          <MetricCard 
-            title="WIP" 
-            metric={team.metrics.wip}
-          />
-          <MetricCard 
-            title="Bug Rate" 
-            metric={team.metrics.bugRate}
-            subtitle={`Anterior: ${team.metrics.bugRate.previous || 'N/A'}`}
-            isPositiveMetric={false}
-          />
-          <MetricCard 
-            title="Time to Resolve Bugs" 
-            metric={team.metrics.timeToResolveBugs}
-            isPositiveMetric={false}
-          />
-          <MetricCard 
-            title="Scope Creep" 
-            metric={team.metrics.scopeCreep}
-            subtitle={`Anterior: ${team.metrics.scopeCreep.previous || 'N/A'}`}
-            isPositiveMetric={false}
-          />
+        {/* Info da sprint selecionada */}
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-blue-900">{currentSprintData.name}</h3>
+              <p className="text-sm text-blue-700">{currentSprintData.period}</p>
+            </div>
+            <Badge variant="outline" className="text-blue-700 border-blue-300">
+              {currentSprintData.start_date} - {currentSprintData.end_date}
+            </Badge>
+          </div>
+        </Card>
+
+        {/* Grid de métricas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.keys(metricsConfig).map(metricKey => (
+            <MetricCard
+              key={metricKey}
+              teamId={teamId}
+              metricKey={metricKey}
+              sprintData={currentSprintData}
+              comparison={comparison?.metrics[metricKey]}
+            />
+          ))}
         </div>
 
-        {/* Insights */}
-        <InsightsList insights={team.insights} />
+        {/* Resumo de melhorias */}
+        {comparison && (
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Comparação com Sprint Anterior ({comparison.previousSprint})
+            </h3>
+            <div className="space-y-2">
+              {Object.entries(comparison.metrics).map(([metricKey, comp]) => {
+                if (!comp) return null
+                const config = metricsConfig[metricKey]
+                return (
+                  <div key={metricKey} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                    <span className="text-sm text-gray-700">{config.name}</span>
+                    <div className={`flex items-center gap-2 ${getTrendColor(comp)}`}>
+                      <span className="text-sm font-medium">
+                        {formatTrendPercentage(comp)}
+                      </span>
+                      <Badge variant={comp.isImprovement ? 'success' : 'destructive'} className="text-xs">
+                        {comp.isImprovement ? 'Melhorou' : 'Piorou'}
+                      </Badge>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
+        )}
       </div>
     )
   }
 
   const ExecutiveSummary = () => {
-    const { executive } = performanceData
-
-    return (
-      <div className="space-y-8">
-        {/* Performance Geral */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Activity className="w-6 h-6 text-orange-600" />
-              <h3 className="text-xl font-semibold text-gray-900">Performance Geral</h3>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-600">Score de Melhoria</span>
-              <Badge className="bg-green-100 text-green-800 border-green-300">
-                Excelente
-              </Badge>
-            </div>
-            
-            <div className="text-3xl font-bold text-green-600 mb-4">
-              {executive.overallScore}%
-            </div>
-            
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
-              <div 
-                className="bg-green-600 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${executive.overallScore}%` }}
-              ></div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-lg font-bold text-green-600">
-                  {executive.improvements.bugRate.count}/{executive.improvements.bugRate.total}
-                </div>
-                <div className="text-xs text-gray-500">Times melhoraram Bug Rate</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-blue-600">
-                  {executive.improvements.cycleTime.count}/{executive.improvements.cycleTime.total}
-                </div>
-                <div className="text-xs text-gray-500">Times reduziram Cycle Time</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-purple-600">
-                  {executive.improvements.scopeCreep.count}/{executive.improvements.scopeCreep.total}
-                </div>
-                <div className="text-xs text-gray-500">Times reduziram Scope Creep</div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Alertas Críticos */}
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
-              <h3 className="text-xl font-semibold text-gray-900">Alertas Críticos</h3>
-            </div>
-            
-            <div className="space-y-3">
-              {executive.alerts.map((alert, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
-                  <div className="text-sm text-red-800">
-                    {alert.message}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* Comparativo entre Times */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Users className="w-6 h-6 text-purple-600" />
-            <h3 className="text-xl font-semibold text-gray-900">Comparativo entre Times</h3>
+    if (loading && !initialized) {
+      return (
+        <div className="flex justify-center items-center py-12">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            <span className="text-gray-600">Carregando resumo executivo...</span>
           </div>
-
-          <div className="space-y-6">
-            {Object.entries(executive.comparative).map(([teamId, metrics]) => {
-              const team = performanceData.teams[teamId]
+        </div>
+      )
+    }
+    
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {teams.map(team => {
+            const sprints = getTeamSprints(team.id)
+            const currentSprintName = selectedSprints[team.id] || sprints[0]
+            const currentSprintData = getSprintData(team.id, currentSprintName)
+            
+            if (!currentSprintData) {
               return (
-                <div key={teamId} className="border rounded-lg p-4">
+                <Card key={team.id} className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-gray-900">{team.name}</h4>
-                    <div className="text-sm font-medium" style={{ color: team.color }}>
-                      {metrics.cycleTime.percentage}%
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full bg-${team.color}-500`}></div>
+                      <h3 className="font-semibold text-gray-900">{team.name}</h3>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Cycle Time:</span>
-                        <span className={getTrendColor(metrics.cycleTime.trend, false)}>
-                          {metrics.cycleTime.trend > 0 ? '+' : ''}{metrics.cycleTime.trend}%
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Bug Rate:</span>
-                        <span className={getTrendColor(metrics.bugRate.trend, false)}>
-                          {metrics.bugRate.trend > 0 ? '+' : ''}{metrics.bugRate.trend}%
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Scope Creep:</span>
-                        <span className={getTrendColor(metrics.scopeCreep.trend, false)}>
-                          {metrics.scopeCreep.trend > 0 ? '+' : ''}{metrics.scopeCreep.trend}%
-                        </span>
-                      </div>
-                    </div>
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">Nenhuma sprint cadastrada</p>
                   </div>
-                </div>
+                </Card>
               )
-            })}
+            }
+
+            return (
+              <TeamSummaryCard 
+                key={team.id} 
+                team={team} 
+                currentSprintData={currentSprintData} 
+                currentSprintName={currentSprintName}
+              />
+            )
+          })}
+        </div>
+        
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Visão Geral dos Times
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Acompanhe o desempenho dos times através das métricas organizadas por sprints.
+            Use os dropdowns em cada dashboard para comparar diferentes períodos.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">Métricas por Sprint</Badge>
+            <Badge variant="secondary">Comparações Automáticas</Badge>
+            <Badge variant="secondary">Score de Performance</Badge>
+            <Badge variant="secondary">Dados em Tempo Real</Badge>
           </div>
         </Card>
       </div>
     )
   }
 
-  const MetricsOverview = () => {
+  // Componente para o card de resumo de cada time
+  const TeamSummaryCard = ({ team, currentSprintData, currentSprintName }) => {
+    const [comparison, setComparison] = useState(null)
+    
+    useEffect(() => {
+      if (currentSprintData) {
+        calculateComparison(team.id, currentSprintData).then(setComparison)
+      }
+    }, [team.id, currentSprintData])
+
+    // Calcular score geral do time baseado nas melhorias
+    const improvements = comparison ? 
+      Object.values(comparison.metrics).filter(m => m?.isImprovement).length : 0
+    const totalMetrics = Object.keys(metricsConfig).length
+    const score = improvements > 0 ? Math.round((improvements / totalMetrics) * 100) : 0
+
     return (
-      <div className="space-y-8">
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">
-            Visão Geral das Métricas
-          </h3>
-          <p className="text-gray-600">
-            Esta seção será expandida com gráficos detalhados e análises históricas.
-            Em produção, as métricas serão gerenciadas através de uma interface dedicada
-            para editores e administradores.
-          </p>
-        </Card>
-      </div>
+      <Card className="p-6 hover:shadow-lg transition-shadow">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full bg-${team.color}-500`}></div>
+            <h3 className="font-semibold text-gray-900">{team.name}</h3>
+          </div>
+          <Badge variant="outline">{currentSprintName}</Badge>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Score de Performance</span>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${score >= 70 ? 'bg-green-500' : score >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+              <span className="font-medium">{score}%</span>
+            </div>
+          </div>
+          
+          <div className="text-xs text-gray-500">
+            {improvements} de {totalMetrics} métricas melhoraram
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setActiveTab(team.id)}
+            className="w-full"
+          >
+            Ver Detalhes
+          </Button>
+        </div>
+      </Card>
     )
   }
 
@@ -309,8 +431,6 @@ export const PerformanceDashboard = ({ user }) => {
       case 'integracoes':
       case 'web':
         return <TeamDashboard teamId={activeTab} />
-      case 'metricas':
-        return <MetricsOverview />
       default:
         return <ExecutiveSummary />
     }
@@ -325,89 +445,67 @@ export const PerformanceDashboard = ({ user }) => {
   }
 
   return (
-    <div className="w-full">
-      <div className="w-full max-w-7xl mx-auto py-8 px-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">S</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Starbem Tech Dashboard
-                </h1>
-                <p className="text-gray-600">Métricas de Desenvolvimento de Produto</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="text-gray-600">
-              {performanceData.period}
-            </Badge>
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh}
-              className="flex items-center gap-2"
-            >
+    <div className="space-y-6">
+      {/* Header integrado com o design da aplicação */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard de Performance</h1>
+          <p className="text-gray-600">Métricas dos times organizadas por sprints</p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            className="flex items-center gap-2"
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
               <RefreshCw className="w-4 h-4" />
-              Atualizar
-            </Button>
-            <div className="text-sm text-gray-500">
-              Última atualização: {lastRefresh}
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-green-600 font-medium">Online</span>
-            </div>
+            )}
+            Atualizar
+          </Button>
+          <div className="text-sm text-gray-500">
+            Última atualização: {lastRefresh}
           </div>
+          {error && (
+            <Badge variant="destructive" className="text-xs">
+              Erro de conexão
+            </Badge>
+          )}
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-orange-500 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
+      {/* Tabs integradas */}
+      <div className="border-b border-gray-200">
+        <nav className="flex space-x-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === tab.id 
+                    ? 'border-blue-500 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
 
-        {/* Content */}
-        <div className="min-h-[600px]">
-          {renderContent()}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 pt-6 border-t border-gray-200">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div>
-              © 2024 Starbem - Dashboard de Métricas de Desenvolvimento
-            </div>
-            <div className="flex items-center gap-4">
-              <span>Dados atualizados em tempo real</span>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-green-600">Online</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Conteúdo */}
+      <div>
+        {renderContent()}
       </div>
     </div>
   )

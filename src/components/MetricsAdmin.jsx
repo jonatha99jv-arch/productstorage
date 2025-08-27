@@ -1,10 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { 
   Plus,
@@ -16,182 +15,432 @@ import {
   Info,
   Database,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  CheckCircle,
+  Target,
+  Loader2
 } from 'lucide-react'
-
-// Mock data para demonstração
-const mockMetrics = [
-  {
-    id: 1,
-    teamId: 'aplicativo',
-    metricName: 'cycleTime',
-    currentValue: '2sem 0d 11.3h',
-    previousValue: '2sem 2d 20.0h',
-    trendPercentage: 14.0,
-    status: 'improved',
-    period: 'Jul/Ago 2024',
-    createdAt: '2024-08-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    teamId: 'integracoes',
-    metricName: 'velocity',
-    currentValue: '120',
-    previousValue: '150',
-    trendPercentage: -20.0,
-    status: 'declined',
-    period: 'Jul/Ago 2024',
-    createdAt: '2024-08-15T10:31:00Z'
-  }
-]
+import { metricsConfig } from '../data/sprintMetricsData'
+import { useSprintMetrics } from '../hooks/useSprintMetrics'
 
 export const MetricsAdmin = ({ user }) => {
-  const [metrics, setMetrics] = useState(mockMetrics)
-  const [editingMetric, setEditingMetric] = useState(null)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [formData, setFormData] = useState({
-    teamId: '',
-    metricName: '',
-    currentValue: '',
-    previousValue: '',
-    trendPercentage: 0,
-    status: 'stable',
-    period: 'Jul/Ago 2024'
+  const [step, setStep] = useState('select-team') // select-team, create-sprint, manage-metrics
+  const [selectedTeam, setSelectedTeam] = useState('')
+  const [sprintForm, setSprintForm] = useState({
+    name: '',
+    period: '',
+    startDate: '',
+    endDate: ''
   })
+  const [metricsForm, setMetricsForm] = useState({})
+  const [successMessage, setSuccessMessage] = useState('')
 
-  const teams = [
-    { id: 'aplicativo', name: 'Time Aplicativo' },
-    { id: 'integracoes', name: 'Time Integrações' },
-    { id: 'web', name: 'Time Web' }
-  ]
+  // Hook do Supabase
+  const { 
+    teams, 
+    loading, 
+    error, 
+    createSprint, 
+    getTeamSprints,
+    initialized 
+  } = useSprintMetrics()
 
-  const metricTypes = [
-    { id: 'cycleTime', name: 'Cycle Time' },
-    { id: 'velocity', name: 'Velocity' },
-    { id: 'wip', name: 'WIP' },
-    { id: 'bugRate', name: 'Bug Rate' },
-    { id: 'timeToResolveBugs', name: 'Time to Resolve Bugs' },
-    { id: 'scopeCreep', name: 'Scope Creep' }
-  ]
+  // Limpar mensagem de sucesso após um tempo
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('')
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage])
 
-  const statusOptions = [
-    { id: 'improved', name: 'Melhorou', color: 'green' },
-    { id: 'declined', name: 'Piorou', color: 'red' },
-    { id: 'stable', name: 'Estável', color: 'gray' }
-  ]
+  // Inicializar formulário de métricas
+  const initializeMetricsForm = () => {
+    const initialForm = {}
+    Object.keys(metricsConfig).forEach(metricKey => {
+      initialForm[metricKey] = {
+        value: '',
+        rawValue: ''
+      }
+    })
+    setMetricsForm(initialForm)
+  }
 
-  const handleSubmit = (e) => {
+  const handleTeamSelect = (teamId) => {
+    setSelectedTeam(teamId)
+    setStep('create-sprint')
+  }
+
+  const handleSprintFormChange = (field, value) => {
+    setSprintForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleMetricChange = (metricKey, value, rawValue = null) => {
+    setMetricsForm(prev => ({
+      ...prev,
+      [metricKey]: {
+        value: value,
+        rawValue: rawValue !== null ? rawValue : value // usar o mesmo valor se não precisar de raw
+      }
+    }))
+  }
+
+  const handleSprintSubmit = (e) => {
+    e.preventDefault()
+    initializeMetricsForm()
+    setStep('manage-metrics')
+  }
+
+  const handleMetricsSubmit = async (e) => {
     e.preventDefault()
     
-    if (editingMetric) {
-      // Atualizar métrica existente
-      setMetrics(metrics.map(m => 
-        m.id === editingMetric.id 
-          ? { ...editingMetric, ...formData, updatedAt: new Date().toISOString() }
-          : m
-      ))
-      setEditingMetric(null)
-    } else {
-      // Criar nova métrica
-      const newMetric = {
-        id: Date.now(),
-        ...formData,
-        createdAt: new Date().toISOString()
+    try {
+      const result = await createSprint(selectedTeam, sprintForm, metricsForm)
+      
+      if (result.success) {
+        // Sucesso - resetar formulários
+        setSprintForm({ name: '', period: '', startDate: '', endDate: '' })
+        setMetricsForm({})
+        setStep('select-team')
+        setSelectedTeam('')
+        setSuccessMessage(`Métricas da ${sprintForm.name} salvas com sucesso!`)
+      } else {
+        throw new Error(result.error || 'Erro ao salvar métricas')
       }
-      setMetrics([...metrics, newMetric])
-      setShowAddForm(false)
+    } catch (err) {
+      console.error('Erro ao salvar sprint:', err)
+      alert(`Erro ao salvar métricas: ${err.message}`)
     }
+  }
+
+  const resetFlow = () => {
+    setStep('select-team')
+    setSelectedTeam('')
+    setSprintForm({ name: '', period: '', startDate: '', endDate: '' })
+    setMetricsForm({})
+  }
+
+  const getProgressSteps = () => {
+    const steps = [
+      { key: 'select-team', label: 'Selecionar Time', completed: selectedTeam !== '' },
+      { key: 'create-sprint', label: 'Dados da Sprint', completed: sprintForm.name !== '' },
+      { key: 'manage-metrics', label: 'Métricas da Sprint', completed: false }
+    ]
     
-    // Reset form
-    setFormData({
-      teamId: '',
-      metricName: '',
-      currentValue: '',
-      previousValue: '',
-      trendPercentage: 0,
-      status: 'stable',
-      period: 'Jul/Ago 2024'
-    })
+    return steps.map(s => ({
+      ...s,
+      active: s.key === step
+    }))
   }
 
-  const handleEdit = (metric) => {
-    setEditingMetric(metric)
-    setFormData({
-      teamId: metric.teamId,
-      metricName: metric.metricName,
-      currentValue: metric.currentValue,
-      previousValue: metric.previousValue || '',
-      trendPercentage: metric.trendPercentage || 0,
-      status: metric.status,
-      period: metric.period
-    })
-    setShowAddForm(true)
-  }
+  const TeamSelectionStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Selecione o Time
+        </h2>
+        <p className="text-gray-600">
+          Escolha o time para o qual deseja cadastrar métricas de sprint
+        </p>
+      </div>
+      
+      {loading && !initialized ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            <span className="text-gray-600">Carregando times...</span>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {teams.map(team => (
+            <Card 
+              key={team.id} 
+              className="p-6 cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200"
+              onClick={() => handleTeamSelect(team.id)}
+            >
+              <div className="text-center">
+                <div className={`w-12 h-12 mx-auto rounded-lg bg-${team.color}-500 flex items-center justify-center mb-3`}>
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="font-medium text-gray-900 mb-1">{team.name}</h3>
+                <div className="text-sm text-gray-500">
+                  {getTeamSprints(team.id).length} sprints cadastradas
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 
-  const handleDelete = (id) => {
-    if (confirm('Tem certeza que deseja excluir esta métrica?')) {
-      setMetrics(metrics.filter(m => m.id !== id))
-    }
-  }
-
-  const getStatusBadge = (status) => {
-    const statusConfig = statusOptions.find(s => s.id === status)
-    const colorClass = {
-      green: 'bg-green-100 text-green-800 border-green-300',
-      red: 'bg-red-100 text-red-800 border-red-300',
-      gray: 'bg-gray-100 text-gray-800 border-gray-300'
-    }[statusConfig?.color || 'gray']
-
+  const SprintFormStep = () => {
+    const selectedTeamData = teams.find(t => t.id === selectedTeam)
+    
     return (
-      <Badge className={colorClass}>
-        {status === 'improved' && <TrendingUp className="w-3 h-3 mr-1" />}
-        {status === 'declined' && <TrendingDown className="w-3 h-3 mr-1" />}
-        {statusConfig?.name}
-      </Badge>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Dados da Sprint - {selectedTeamData?.name}
+            </h2>
+            <p className="text-gray-600">
+              Preencha as informações básicas da sprint
+            </p>
+          </div>
+          <Button variant="outline" onClick={resetFlow}>
+            <X className="w-4 h-4 mr-2" />
+            Cancelar
+          </Button>
+        </div>
+        
+        <Card className="p-6">
+          <form onSubmit={handleSprintSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Nome da Sprint *</Label>
+                <Input
+                  placeholder="Ex: Sprint 10"
+                  value={sprintForm.name}
+                  onChange={(e) => handleSprintFormChange('name', e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label>Período *</Label>
+                <Input
+                  placeholder="Ex: Set 2024"
+                  value={sprintForm.period}
+                  onChange={(e) => handleSprintFormChange('period', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Data de Início *</Label>
+                <Input
+                  type="date"
+                  value={sprintForm.startDate}
+                  onChange={(e) => handleSprintFormChange('startDate', e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label>Data de Fim *</Label>
+                <Input
+                  type="date"
+                  value={sprintForm.endDate}
+                  onChange={(e) => handleSprintFormChange('endDate', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setStep('select-team')}>
+                Voltar
+              </Button>
+              <Button type="submit">
+                Continuar
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
     )
   }
 
-  const cancelEdit = () => {
-    setEditingMetric(null)
-    setShowAddForm(false)
-    setFormData({
-      teamId: '',
-      metricName: '',
-      currentValue: '',
-      previousValue: '',
-      trendPercentage: 0,
-      status: 'stable',
-      period: 'Jul/Ago 2024'
-    })
+  const MetricsFormStep = () => {
+    const selectedTeamData = teams.find(t => t.id === selectedTeam)
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Métricas da Sprint - {sprintForm.name}
+            </h2>
+            <p className="text-gray-600">
+              {selectedTeamData?.name} • {sprintForm.period}
+            </p>
+          </div>
+          <Button variant="outline" onClick={resetFlow}>
+            <X className="w-4 h-4 mr-2" />
+            Cancelar
+          </Button>
+        </div>
+        
+        <Card className="p-6">
+          <form onSubmit={handleMetricsSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Object.entries(metricsConfig).map(([metricKey, config]) => {
+                return (
+                  <Card key={metricKey} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 bg-gray-100 rounded">
+                          <Target className="w-4 h-4 text-gray-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">{config.name}</h3>
+                          <p className="text-xs text-gray-500">{config.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div>
+                          <Label htmlFor={`${metricKey}-value`}>Valor *</Label>
+                          <Input
+                            id={`${metricKey}-value`}
+                            placeholder={config.placeholder}
+                            value={metricsForm[metricKey]?.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              // Para métricas numéricas simples, usar o próprio valor como rawValue
+                              const rawValue = config.needsRawValue ? '' : value
+                              handleMetricChange(metricKey, value, rawValue)
+                            }}
+                            required
+                          />
+                        </div>
+                        
+                        {config.needsRawValue && (
+                          <div>
+                            <Label htmlFor={`${metricKey}-raw`}>Valor em Horas *</Label>
+                            <Input
+                              id={`${metricKey}-raw`}
+                              type="number"
+                              step="0.1"
+                              placeholder={config.rawPlaceholder}
+                              value={metricsForm[metricKey]?.rawValue || ''}
+                              onChange={(e) => handleMetricChange(metricKey, metricsForm[metricKey]?.value || '', e.target.value)}
+                              required
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Valor numérico para comparações
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setStep('create-sprint')}>
+                Voltar
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Métricas
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+    )
+  }
+
+  const ProgressIndicator = () => {
+    const steps = getProgressSteps()
+    
+    return (
+      <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center space-x-4">
+          {steps.map((step, index) => (
+            <div key={step.key} className="flex items-center">
+              <div className={`
+                flex items-center justify-center w-8 h-8 rounded-full border-2 
+                ${step.active 
+                  ? 'bg-blue-600 border-blue-600 text-white' 
+                  : step.completed 
+                    ? 'bg-green-600 border-green-600 text-white'
+                    : 'border-gray-300 text-gray-400'
+                }
+              `}>
+                {step.completed ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <span>{index + 1}</span>
+                )}
+              </div>
+              <span className={`ml-2 text-sm ${
+                step.active ? 'text-blue-600 font-medium' : 'text-gray-500'
+              }`}>
+                {step.label}
+              </span>
+              {index < steps.length - 1 && (
+                <div className={`w-8 h-px mx-4 ${
+                  steps[index + 1].completed || steps[index + 1].active ? 'bg-blue-300' : 'bg-gray-300'
+                }`} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const renderStepContent = () => {
+    switch (step) {
+      case 'select-team':
+        return <TeamSelectionStep />
+      case 'create-sprint':
+        return <SprintFormStep />
+      case 'manage-metrics':
+        return <MetricsFormStep />
+      default:
+        return <TeamSelectionStep />
+    }
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-8 px-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Database className="w-8 h-8 text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Gerenciamento de Métricas
-            </h1>
-            <p className="text-gray-600">
-              Configure e monitore as métricas de performance dos times
-            </p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Gerenciamento de Métricas
+          </h1>
+          <p className="text-gray-600">
+            Cadastre métricas de performance organizadas por sprint e time
+          </p>
         </div>
         
-        <Button 
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Métrica
-        </Button>
+        {step !== 'select-team' && (
+          <Button onClick={resetFlow} variant="outline">
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Sprint
+          </Button>
+        )}
       </div>
 
       {/* Info sobre integração com Supabase */}
-      <Card className="p-4 mb-6 border-blue-200 bg-blue-50">
+      <Card className="p-4 border-blue-200 bg-blue-50">
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-600 mt-0.5" />
           <div>
@@ -204,226 +453,37 @@ export const MetricsAdmin = ({ user }) => {
         </div>
       </Card>
 
-      {/* Form para adicionar/editar métrica */}
-      {showAddForm && (
-        <Card className="p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">
-              {editingMetric ? 'Editar Métrica' : 'Nova Métrica'}
-            </h3>
-            <Button variant="outline" onClick={cancelEdit}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+      {/* Progress Indicator */}
+      <ProgressIndicator />
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="teamId">Time</Label>
-                <Select 
-                  value={formData.teamId}
-                  onValueChange={(value) => setFormData({...formData, teamId: value})}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Conteúdo da etapa atual */}
+      {renderStepContent()}
 
-              <div>
-                <Label htmlFor="metricName">Tipo de Métrica</Label>
-                <Select 
-                  value={formData.metricName}
-                  onValueChange={(value) => setFormData({...formData, metricName: value})}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a métrica" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {metricTypes.map(metric => (
-                      <SelectItem key={metric.id} value={metric.id}>
-                        {metric.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="currentValue">Valor Atual</Label>
-                <Input
-                  id="currentValue"
-                  value={formData.currentValue}
-                  onChange={(e) => setFormData({...formData, currentValue: e.target.value})}
-                  placeholder="Ex: 2sem 0d 11.3h ou 300"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="previousValue">Valor Anterior</Label>
-                <Input
-                  id="previousValue"
-                  value={formData.previousValue}
-                  onChange={(e) => setFormData({...formData, previousValue: e.target.value})}
-                  placeholder="Ex: 2sem 2d 20.0h ou 280"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="trendPercentage">Tendência (%)</Label>
-                <Input
-                  id="trendPercentage"
-                  type="number"
-                  value={formData.trendPercentage}
-                  onChange={(e) => setFormData({...formData, trendPercentage: parseFloat(e.target.value)})}
-                  placeholder="Ex: 14.0 ou -20.0"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({...formData, status: value})}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status da métrica" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map(status => (
-                      <SelectItem key={status.id} value={status.id}>
-                        {status.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+      {/* Mensagem de sucesso */}
+      {successMessage && (
+        <Card className="p-4 border-green-200 bg-green-50">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600" />
             <div>
-              <Label htmlFor="period">Período</Label>
-              <Input
-                id="period"
-                value={formData.period}
-                onChange={(e) => setFormData({...formData, period: e.target.value})}
-                placeholder="Ex: Jul/Ago 2024"
-                required
-              />
+              <h3 className="font-medium text-green-900">Sucesso!</h3>
+              <p className="text-sm text-green-800">{successMessage}</p>
             </div>
-
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={cancelEdit}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                <Save className="w-4 h-4 mr-2" />
-                {editingMetric ? 'Salvar Alterações' : 'Criar Métrica'}
-              </Button>
-            </div>
-          </form>
+          </div>
         </Card>
       )}
 
-      {/* Lista de métricas */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Métricas Cadastradas</h3>
-        
-        {metrics.length === 0 ? (
-          <div className="text-center py-8">
-            <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhuma métrica cadastrada ainda</p>
+      {/* Erro de conexão */}
+      {error && (
+        <Card className="p-4 border-red-200 bg-red-50">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div>
+              <h3 className="font-medium text-red-900">Erro de Conexão</h3>
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {metrics.map((metric) => {
-              const team = teams.find(t => t.id === metric.teamId)
-              const metricType = metricTypes.find(m => m.id === metric.metricName)
-              
-              return (
-                <div key={metric.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-medium text-gray-900">
-                          {team?.name} - {metricType?.name}
-                        </h4>
-                        {getStatusBadge(metric.status)}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">Atual:</span> {metric.currentValue}
-                        </div>
-                        <div>
-                          <span className="font-medium">Anterior:</span> {metric.previousValue || 'N/A'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Tendência:</span> 
-                          <span className={metric.trendPercentage > 0 ? 'text-green-600' : metric.trendPercentage < 0 ? 'text-red-600' : 'text-gray-600'}>
-                            {metric.trendPercentage > 0 ? '+' : ''}{metric.trendPercentage}%
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Período:</span> {metric.period}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEdit(metric)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDelete(metric.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </Card>
-
-      {/* Seção de integração futura com Supabase */}
-      <Card className="p-6 mt-6">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-          <div>
-            <h3 className="font-medium text-amber-900">Estrutura para Produção</h3>
-            <p className="text-sm text-amber-800 mt-1 mb-3">
-              Em produção, esta interface se conectará diretamente ao Supabase com as seguintes funcionalidades:
-            </p>
-            <ul className="text-sm text-amber-800 space-y-1">
-              <li>• Sincronização automática com o dashboard de performance</li>
-              <li>• Histórico completo de métricas por período</li>
-              <li>• Validação de permissões (apenas editores e admins)</li>
-              <li>• Backup automático dos dados</li>
-              <li>• API endpoints para integração com ferramentas externas</li>
-            </ul>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
   )
 }

@@ -51,12 +51,14 @@ export const careerLevels = [
     title: 'Engenheiro Júnior',
     track: 'technical',
     level: 1,
-    description: 'Desenvolvedor iniciante focado em aprender as bases da engenharia de software.',
+    description: 'O cargo de Júnior na Starbem representa a porta de entrada para a carreira na empresa, com foco no aprendizado contínuo e no desenvolvimento de habilidades técnicas e comportamentais.',
     responsibilities: [
-      'Desenvolver funcionalidades simples com supervisão',
-      'Participar ativamente de code reviews',
-      'Seguir padrões de código estabelecidos pela equipe',
-      'Colaborar em projetos de pequeno a médio porte'
+      'Aprendizado e Desenvolvimento: Participa de treinamentos, revisões de código e práticas de melhoria contínua',
+      'Execução Supervisionada: Realiza tarefas sob orientação, garantindo a entrega de soluções funcionais e de qualidade',
+      'Participação no Time: Colabora com diferentes áreas, aprendendo a dinâmica dos processos e metodologias da empresa',
+      'Boas Práticas e Padronização: Segue diretrizes estabelecidas, adquirindo conhecimento sobre processos eficientes',
+      'Adaptação e Evolução: Se mantém aberto ao aprendizado, recebendo feedback e ajustando sua abordagem conforme necessário',
+      'Uso de Inteligência Artificial: Utiliza ferramentas de IA para otimizar tarefas e aumentar produtividade'
     ],
     technicalSkills: [
       'Linguagem principal (Python/Java/Node.js)',
@@ -88,12 +90,14 @@ export const careerLevels = [
     title: 'Engenheiro Pleno',
     track: 'technical',
     level: 2,
-    description: 'Desenvolvedor experiente capaz de trabalhar de forma independente em projetos complexos.',
+    description: 'O cargo de Pleno na Starbem representa um profissional com autonomia crescente e capacidade de execução independente, contribuindo ativamente para o desenvolvimento de soluções.',
     responsibilities: [
-      'Desenvolver funcionalidades complexas de forma autônoma',
-      'Mentorear desenvolvedores juniores',
-      'Participar do design de arquitetura',
-      'Liderar pequenos projetos técnicos'
+      'Autonomia na Execução: Realiza tarefas e projetos com independência, garantindo qualidade e eficiência',
+      'Participação Ativa: Contribui para discussões técnicas e estratégicas dentro do time',
+      'Colaboração Interdisciplinar: Trabalha de forma integrada com diferentes times (Engenharia, Produto, Design, QA, Engenharia, Dados)',
+      'Melhoria Contínua: Identifica oportunidades de otimização e boas práticas, contribuindo para a evolução dos processos',
+      'Apoio e Mentoria: Ajuda no desenvolvimento de profissionais júniores, compartilhando conhecimento e boas práticas',
+      'Uso de Inteligência Artificial: Usa ferramentas de IA para aumentar a produtividade e propor soluções inovadoras'
     ],
     technicalSkills: [
       'Arquitetura de sistemas',
@@ -126,12 +130,14 @@ export const careerLevels = [
     title: 'Engenheiro Sênior',
     track: 'technical',
     level: 3,
-    description: 'Especialista técnico com visão sistêmica e capacidade de influenciar decisões arquiteturais.',
+    description: 'O cargo de Sênior na Starbem representa um nível de alta autonomia e responsabilidade técnica, sendo referência dentro dos times.',
     responsibilities: [
-      'Definir arquitetura de sistemas críticos',
-      'Mentorear múltiplos desenvolvedores',
-      'Influenciar decisões técnicas da empresa',
-      'Resolver problemas técnicos complexos'
+      'Liderança Técnica: Atua como referência dentro do time, participando ativamente na definição de soluções',
+      'Execução e Eficiência: Entrega soluções de alto impacto, garantindo qualidade, segurança e eficiência',
+      'Mentoria: Apoia o desenvolvimento dos profissionais júniores e plenos, compartilhando conhecimento e boas práticas',
+      'Colaboração Estratégica: Trabalha em conjunto com Product Owners, Designers, QAs e outras áreas',
+      'Resolução de Problemas: Identifica gargalos, propõe soluções inovadoras e atua na melhoria contínua dos processos',
+      'Uso de Inteligência Artificial: Utiliza IA para otimizar tarefas e implementa soluções de automação baseadas em IA'
     ],
     technicalSkills: [
       'Arquitetura distribuída',
@@ -164,12 +170,15 @@ export const careerLevels = [
     title: 'Staff Engineer',
     track: 'technical',
     level: 4,
-    description: 'Líder técnico sênior com impacto organizacional e visão estratégica.',
+    description: 'O cargo de Staff na Starbem representa um dos níveis mais altos na trilha de Liderança Técnica, sendo referência técnica e comportamental na empresa.',
     responsibilities: [
-      'Definir direção técnica da empresa',
-      'Liderar iniciativas cross-funcionais',
-      'Desenvolver estratégias de longo prazo',
-      'Ser referência técnica externa'
+      'Liderança Técnica: Atua como principal influenciador nas decisões e na evolução da plataforma da empresa',
+      'Mentoria e Desenvolvimento: Suporte e mentoria técnica para times, garantindo crescimento profissional da equipe',
+      'Inovação e Pesquisa: Avalia e experimenta novas tecnologias, frameworks e soluções de mercado',
+      'Definição de Padrões: Estabelece guidelines técnicos, melhores práticas e diretrizes para o uso de tecnologias',
+      'Escalabilidade e Performance: Garante que as soluções desenvolvidas sejam eficientes, seguras e sustentáveis',
+      'Colaboração Estratégica: Trabalha com lideranças de Produto, Engenharia, Dados e Suporte',
+      'Uso de Inteligência Artificial: Implementa soluções baseadas em IA e define padrões de uso de IA na empresa'
     ],
     technicalSkills: [
       'Enterprise architecture',
@@ -236,16 +245,18 @@ export const careerLevels = [
     }
   },
   {
-    id: 'tech-manager',
-    title: 'Tech Manager',
+    id: 'tech-lead',
+    title: 'Tech Lead',
     track: 'management',
     level: 4,
-    description: 'Gerente técnico responsável por pessoas e resultados de múltiplas equipes.',
+    description: 'O Tech Lead na Starbem é um papel fundamental na liderança técnica dos times, atuando na interseção entre tecnologia, produto e pessoas.',
     responsibilities: [
-      'Gerenciar múltiplas equipes de desenvolvimento',
-      'Definir roadmap técnico',
-      'Desenvolvimento de carreira dos colaboradores',
-      'Alinhar objetivos técnicos com negócio'
+      'Liderança Técnica: Orienta o time na definição de arquiteturas, padrões de código e melhores práticas',
+      'Entrega e Qualidade: Garante que as entregas do time atendam aos padrões de excelência técnica e aos requisitos de negócio',
+      'Mentoria e Desenvolvimento: Atua como referência para o time, ajudando no crescimento de engenheiros Júnior, Pleno e Sênior',
+      'Tomada de Decisão Estratégica: Colabora com Product Owners, Designers e outras áreas para alinhar tecnologia às necessidades do produto',
+      'Melhoria Contínua: Identifica e implementa otimizações nos processos de desenvolvimento e infraestrutura',
+      'Uso de Inteligência Artificial: Identifica oportunidades para aplicar IA na otimização de processos e desenvolvimento de produtos'
     ],
     technicalSkills: [
       'People management',
@@ -273,16 +284,18 @@ export const careerLevels = [
     }
   },
   {
-    id: 'tech-director',
-    title: 'Tech Director',
+    id: 'tech-manager',
+    title: 'Tech Manager',
     track: 'management',
     level: 5,
-    description: 'Líder sênior responsável pela estratégia e execução de toda a engenharia.',
+    description: 'O Tech Manager na Starbem é um líder sênior responsável pela estratégia e execução de toda a engenharia, com foco na gestão de múltiplas equipes e alinhamento com objetivos de negócio.',
     responsibilities: [
-      'Definir estratégia de engenharia',
-      'Liderar organização técnica',
-      'Alinhar com objetivos de negócio',
-      'Desenvolver cultura de engenharia'
+      'Liderança Organizacional: Define estratégia de engenharia e lidera organização técnica',
+      'Gestão de Múltiplas Equipes: Gerencia diversos times de desenvolvimento e Tech Leads',
+      'Alinhamento Estratégico: Alinha objetivos técnicos com metas de negócio da empresa',
+      'Desenvolvimento de Cultura: Desenvolve e mantém cultura de engenharia de excelência',
+      'Gestão de Pessoas: Responsável pelo desenvolvimento de carreira e performance dos colaboradores',
+      'Inovação e Tecnologia: Lidera iniciativas de inovação tecnológica e adoção de novas ferramentas'
     ],
     technicalSkills: [
       'Organizational leadership',

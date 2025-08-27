@@ -36,8 +36,8 @@
 // Mock user data
 export const mockUser = {
   id: '1',
-  name: 'Ana Silva',
-  email: 'ana.silva@starbem.com',
+  name: 'José Tenório',
+  email: 'jose.tenorio@starbem.com',
   currentLevel: 'pleno-backend',
   area: 'Back-end',
   track: 'technical'

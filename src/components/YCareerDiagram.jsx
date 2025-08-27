@@ -38,8 +38,8 @@ export const YCareerDiagram = ({ user }) => {
   const seniorLevel = careerLevels.find(l => l.id === 'senior-backend')
   
   // Trilha de gestão (lado direito)
+  const techLeadLevel = careerLevels.find(l => l.id === 'tech-lead')
   const techManagerLevel = careerLevels.find(l => l.id === 'tech-manager')
-  const techDirectorLevel = careerLevels.find(l => l.id === 'tech-director')
   
   // Trilha técnica (lado esquerdo)
   const staffLevel = careerLevels.find(l => l.id === 'staff-backend')
@@ -52,8 +52,8 @@ export const YCareerDiagram = ({ user }) => {
       case 'senior-backend': return Zap
       case 'staff-backend': return Crown
       case 'principal-backend': return User
-      case 'tech-manager': return Users
-      case 'tech-director': return Building
+      case 'tech-lead': return Users
+      case 'tech-manager': return Building
       default: return User
     }
   }
@@ -130,10 +130,10 @@ export const YCareerDiagram = ({ user }) => {
               <div className="mt-2 text-sm text-gray-500">Especialista Principal</div>
             </div>
             
-            {/* Tech Director */}
+            {/* Tech Manager */}
             <div className="text-center">
-              {renderCareerNode(techDirectorLevel)}
-              <div className="mt-2 text-sm text-gray-500">Diretor de Tecnologia</div>
+              {renderCareerNode(techManagerLevel)}
+              <div className="mt-2 text-sm text-gray-500">Gerente de Tecnologia</div>
             </div>
           </div>
 
@@ -145,10 +145,10 @@ export const YCareerDiagram = ({ user }) => {
               <div className="mt-2 text-sm text-gray-500">Arquiteto de Software</div>
             </div>
             
-            {/* Tech Manager */}
+            {/* Tech Lead */}
             <div className="text-center">
-              {renderCareerNode(techManagerLevel)}
-              <div className="mt-2 text-sm text-gray-500">Gerente de Tecnologia</div>
+              {renderCareerNode(techLeadLevel)}
+              <div className="mt-2 text-sm text-gray-500">Líder Técnico</div>
             </div>
           </div>
 
@@ -172,7 +172,7 @@ export const YCareerDiagram = ({ user }) => {
               opacity="0.4"
               strokeDasharray="5,5"
             />
-            {/* Tech Manager para Senior */}
+            {/* Tech Lead para Senior */}
             <path 
               d="M 240 20 Q 200 60 160 100" 
               stroke="#10B981" 
@@ -188,7 +188,7 @@ export const YCareerDiagram = ({ user }) => {
             {/* Senior - Tech Lead */}
             <div className="text-center">
               {renderCareerNode(seniorLevel)}
-              <div className="mt-2 text-sm text-gray-500">Tech Lead</div>
+              <div className="mt-2 text-sm text-gray-500">Desenvolvedor Sênior</div>
               
               {/* Linha vertical para Pleno */}
               <div className="w-px h-12 bg-gray-300 mx-auto mt-6 opacity-40"></div>

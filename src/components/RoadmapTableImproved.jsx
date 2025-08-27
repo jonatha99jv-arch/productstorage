@@ -416,6 +416,12 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                           )}
                         </div>
                       )}
+                      {(!item.subProduto || item.subProduto === 'geral') && item.dataInicio && item.dataFim && (
+                        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDateRange(item)}</span>
+                        </div>
+                      )}
                       {/* Subitens removidos da coluna Item conforme solicitado */}
                       {item.dataInicio && item.dataFim && (
                         <div className="space-y-1">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabaseClient'
+import { supabase, hasSupabase } from './lib/supabaseClient'
 import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
 import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, FileText, TrendingUp } from 'lucide-react'
@@ -137,10 +137,9 @@ function App() {
   }, [activePage])
 
   const checkDatabaseSetup = async () => {
-    if (isMockMode()) {
+    if (isMockMode() || !hasSupabase) {
       // Em modo mock, não precisa verificar banco - já está "pronto"
       console.log('🎭 Modo mock ativo - pulando verificação de banco')
-      setDatabaseReady(true)
       return
     }
     
@@ -162,11 +161,11 @@ function App() {
           setShowDatabaseSetup(true)
         } else {
           // Outros erros, assumir que o banco está configurado
-          setDatabaseReady(true)
+          // seguir sem bloquear
         }
       } else {
         // Sem erros, banco está configurado
-        setDatabaseReady(true)
+        // ok
       }
     } catch (error) {
       console.error('Erro ao verificar configuração do banco:', error)
@@ -176,7 +175,6 @@ function App() {
 
   const handleDatabaseSetupComplete = () => {
     setShowDatabaseSetup(false)
-    setDatabaseReady(true)
   }
 
   // Loading da sessão
@@ -202,7 +200,7 @@ function App() {
   }
 
   // Se precisar configurar o banco, mostrar tela de configuração
-  if (showDatabaseSetup) {
+  if (showDatabaseSetup && hasSupabase) {
     return <DatabaseSetup onSetupComplete={handleDatabaseSetupComplete} />
   }
 

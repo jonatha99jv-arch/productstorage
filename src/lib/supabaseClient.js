@@ -2,9 +2,10 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+export const hasSupabase = Boolean(supabaseUrl && supabaseAnonKey)
 
 let supabase
-if (supabaseUrl && supabaseAnonKey) {
+if (hasSupabase) {
   supabase = createClient(supabaseUrl, supabaseAnonKey)
 } else {
   // Fallback stub to avoid crashes when env vars are missing; operations will no-op

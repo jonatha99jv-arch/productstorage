@@ -268,6 +268,18 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
+  // Calcular diferença aproximada em meses entre duas datas (inclui mês corrente se houver sobreposição)
+  const diffInMonthsInclusive = (startLike, endLike) => {
+    const start = (startLike instanceof Date) ? startLike : new Date(startLike)
+    const end = (endLike instanceof Date) ? endLike : new Date(endLike)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+    let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+    // incluir o mês final quando o dia de fim é >= dia de início
+    if (end.getDate() >= start.getDate()) months += 1
+    // garantir ao menos 1 mês quando estiver no mesmo mês
+    return Math.max(1, months)
+  }
+
   const currentQuarter = QUARTERS[selectedQuarter]
   const currentYear = new Date().getFullYear()
   const filteredItems = getFilteredAndSortedItems()
@@ -452,7 +464,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                       if (!item.dataInicio) return { marginLeft: '0' }
                       
                       const startDate = new Date(item.dataInicio)
-                      const monthStart = new Date(itemYear, monthNumber - 1, 1)
+                      // const monthStart = new Date(itemYear, monthNumber - 1, 1)
                       
                       // Se o item começa neste mês, calcular posição baseada no dia
                       if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === itemYear) {
@@ -573,7 +585,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Duração</div>
-                  <div className="text-sm font-medium">{previewItem.dataInicio && previewItem.dataFim ? `${new Date(previewItem.dataFim).getFullYear() - new Date(previewItem.dataInicio).getFullYear()} anos` : '-'}</div>
+                  <div className="text-sm font-medium">{previewItem.dataInicio && previewItem.dataFim ? `${diffInMonthsInclusive(previewItem.dataInicio, previewItem.dataFim)} meses` : '-'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">OKR</div>

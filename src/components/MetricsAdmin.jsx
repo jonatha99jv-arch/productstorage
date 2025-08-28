@@ -108,7 +108,7 @@ export const MetricsAdmin = ({ user }) => {
         setStep('select-team')
         setSelectedTeam('')
         setSuccessMessage(`Métricas da ${sprintForm.name} salvas com sucesso!`)
-      } else {
+    } else {
         throw new Error(result.error || 'Erro ao salvar métricas')
       }
     } catch (err) {
@@ -367,7 +367,7 @@ export const MetricsAdmin = ({ user }) => {
 
   const ProgressIndicator = () => {
     const steps = getProgressSteps()
-    
+
     return (
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center space-x-4">
@@ -422,20 +422,20 @@ export const MetricsAdmin = ({ user }) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gerenciamento de Métricas
-          </h1>
-          <p className="text-gray-600">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Gerenciamento de Métricas
+            </h1>
+            <p className="text-gray-600">
             Cadastre métricas de performance organizadas por sprint e time
-          </p>
+            </p>
         </div>
         
         {step !== 'select-team' && (
           <Button onClick={resetFlow} variant="outline">
-            <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4 mr-2" />
             Nova Sprint
-          </Button>
+        </Button>
         )}
       </div>
 
@@ -464,11 +464,11 @@ export const MetricsAdmin = ({ user }) => {
         <Card className="p-4 border-green-200 bg-green-50">
           <div className="flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-600" />
-            <div>
+              <div>
               <h3 className="font-medium text-green-900">Sucesso!</h3>
               <p className="text-sm text-green-800">{successMessage}</p>
+              </div>
             </div>
-          </div>
         </Card>
       )}
 
@@ -477,12 +477,12 @@ export const MetricsAdmin = ({ user }) => {
         <Card className="p-4 border-red-200 bg-red-50">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-red-600" />
-            <div>
+                        <div>
               <h3 className="font-medium text-red-900">Erro de Conexão</h3>
               <p className="text-sm text-red-800">{error}</p>
-            </div>
           </div>
-        </Card>
+        </div>
+      </Card>
       )}
     </div>
   )

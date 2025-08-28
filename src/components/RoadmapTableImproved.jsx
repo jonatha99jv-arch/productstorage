@@ -67,11 +67,23 @@ const formatSubProductLabel = (value) => {
 }
 
 const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
-  const [selectedQuarter, setSelectedQuarter] = useState('Q1')
+  const getDefaultQuarter = () => {
+    const m = new Date().getMonth() + 1
+    if (m <= 3) return 'Q1'
+    if (m <= 6) return 'Q2'
+    if (m <= 9) return 'Q3'
+    return 'Q4'
+  }
+  const [selectedQuarter, setSelectedQuarter] = useState(getDefaultQuarter())
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
   const [selectedIds, setSelectedIds] = useState([])
   const [previewItem, setPreviewItem] = useState(null)
+  const [expandedItems, setExpandedItems] = useState({})
+
+  const toggleExpanded = (id) => {
+    setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }))
+  }
 
   // Função para verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
@@ -268,6 +280,18 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
+  // Calcular diferença aproximada em meses entre duas datas (inclui mês corrente se houver sobreposição)
+  const diffInMonthsInclusive = (startLike, endLike) => {
+    const start = (startLike instanceof Date) ? startLike : new Date(startLike)
+    const end = (endLike instanceof Date) ? endLike : new Date(endLike)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+    let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+    // incluir o mês final quando o dia de fim é >= dia de início
+    if (end.getDate() >= start.getDate()) months += 1
+    // garantir ao menos 1 mês quando estiver no mesmo mês
+    return Math.max(1, months)
+  }
+
   const currentQuarter = QUARTERS[selectedQuarter]
   const currentYear = new Date().getFullYear()
   const filteredItems = getFilteredAndSortedItems()
@@ -412,7 +436,23 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                             <div className="text-xs text-gray-500 flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               <span>{formatDateRange(item)}</span>
+                              {Array.isArray(item.subitens) && item.subitens.length > 0 && (
+                                <button type="button" aria-label="Alternar subitens" onClick={() => toggleExpanded(item.id)} className="ml-1 inline-flex items-center">
+                                  <span style={{ display:'inline-block', width:0, height:0, borderLeft:'5px solid transparent', borderRight:'5px solid transparent', borderTop:'6px solid #64748b', transform: expandedItems[item.id] ? 'rotate(180deg)' : 'none', transition:'transform 120ms ease' }} />
+                                </button>
+                              )}
                             </div>
+                          )}
+                        </div>
+                      )}
+                      {(!item.subProduto || item.subProduto === 'geral') && item.dataInicio && item.dataFim && (
+                        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDateRange(item)}</span>
+                          {Array.isArray(item.subitens) && item.subitens.length > 0 && (
+                            <button type="button" aria-label="Alternar subitens" onClick={() => toggleExpanded(item.id)} className="ml-1 inline-flex items-center">
+                              <span style={{ display:'inline-block', width:0, height:0, borderLeft:'5px solid transparent', borderRight:'5px solid transparent', borderTop:'6px solid #64748b', transform: expandedItems[item.id] ? 'rotate(180deg)' : 'none', transition:'transform 120ms ease' }} />
+                            </button>
                           )}
                         </div>
                       )}
@@ -430,6 +470,16 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                           </div>
                         </div>
                       )}
+                      {expandedItems[item.id] && Array.isArray(item.subitens) && item.subitens.length > 0 && (
+                        <div className="mt-2">
+                          <div className="text-[10px] text-gray-500 mb-1">Subitens</div>
+                          <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                            {item.subitens.map((si, idx) => (
+                              <li key={idx}>{si}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </td>
                   
@@ -442,22 +492,16 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                     const fillProportion = getMonthFillProportion(item, monthNumber, itemYear)
                     
                     // Calcular posição da barra baseada na data de início
-                    const getBarPosition = () => {
-                      if (!item.dataInicio) return { marginLeft: '0' }
-                      
+                    const computePlacement = () => {
+                      if (!item.dataInicio) return { leftPercent: 0 }
                       const startDate = new Date(item.dataInicio)
-                      const monthStart = new Date(itemYear, monthNumber - 1, 1)
-                      
-                      // Se o item começa neste mês, calcular posição baseada no dia
                       if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === itemYear) {
                         const dayOfMonth = startDate.getDate()
                         const daysInMonth = new Date(itemYear, monthNumber, 0).getDate()
-                        const startPosition = (dayOfMonth - 1) / daysInMonth // Posição relativa no mês
-                        return { marginLeft: `${startPosition * 100}%` }
+                        const startPosition = (dayOfMonth - 1) / daysInMonth
+                        return { leftPercent: Math.max(0, Math.min(100, startPosition * 100)) }
                       }
-                      
-                      // Se o item começa em mês anterior, barra à esquerda
-                      return { marginLeft: '0' }
+                      return { leftPercent: 0 }
                     }
                     
                     return (
@@ -466,8 +510,13 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                           <div 
                             className={`status-visual ${STATUS_CONFIG[item.status]?.className || ''}`}
                             style={{
-                              width: `${Math.max(fillProportion * 100, 30)}%`, // Mínimo 30% para visibilidade
-                              ...getBarPosition() // Aplicar posição da barra
+                              // Garantir que não ultrapasse a célula: width + left <= 100%
+                              ...( (() => {
+                                const { leftPercent } = computePlacement()
+                                const rawWidth = Math.max(fillProportion * 100, 30)
+                                const clampedWidth = Math.max(0, Math.min(100 - leftPercent, rawWidth))
+                                return { width: `${clampedWidth}%`, marginLeft: `${leftPercent}%` }
+                              })() )
                             }}
                             onClick={() => {
                               // Ciclar entre os status ao clicar
@@ -567,7 +616,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Duração</div>
-                  <div className="text-sm font-medium">{previewItem.dataInicio && previewItem.dataFim ? `${new Date(previewItem.dataFim).getFullYear() - new Date(previewItem.dataInicio).getFullYear()} anos` : '-'}</div>
+                  <div className="text-sm font-medium">{previewItem.dataInicio && previewItem.dataFim ? `${diffInMonthsInclusive(previewItem.dataInicio, previewItem.dataFim)} meses` : '-'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">OKR</div>

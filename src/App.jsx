@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabaseClient'
+import { supabase, hasSupabase } from './lib/supabaseClient'
 import { useSupabaseData } from './hooks/useSupabaseData'
 import { Button } from '@/components/ui/button.jsx'
-import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, FileText, TrendingUp } from 'lucide-react'
+import { Plus, Settings, BarChart3, RefreshCw, Users, User, LogOut, Target, FileText, TrendingUp, ClipboardList } from 'lucide-react'
+import EnvelopeDown from '@/components/icons/EnvelopeDown'
+import EnvelopeOpenDown from '@/components/icons/EnvelopeOpenDown'
 import RoadmapTableImproved from './components/RoadmapTableImproved'
-import OKRManager from './components/OKRManager'
 import BulkImportModal from './components/BulkImportModal'
-import OKRProgress from './components/OKRProgress'
+import OKRsPage from './components/OKRsPage'
 import ItemModalImproved from './components/ItemModalImproved'
 import ProductTabs from './components/ProductTabs'
 import DatabaseSetup from './components/DatabaseSetup'
@@ -25,24 +26,23 @@ import ErrorBoundary from './components/ErrorBoundary'
 function App() {
   // ✅ TODOS OS HOOKS DEVEM VIR PRIMEIRO - NUNCA APÓS RETURNS CONDICIONAIS
   const [showDatabaseSetup, setShowDatabaseSetup] = useState(false)
-  const [databaseReady, setDatabaseReady] = useState(false)
+  // const [databaseReady, setDatabaseReady] = useState(false) // não utilizado
   const [session, setSession] = useState(null)
   const [sessionLoading, setSessionLoading] = useState(true)
   const [userName, setUserName] = useState('')
-  const [showOKRManager, setShowOKRManager] = useState(false)
-  const [showOKRProgress, setShowOKRProgress] = useState(false)
+  // Estados de modais de OKR foram removidos (usa página OKRs)
   const [showItemModal, setShowItemModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [currentProduct, setCurrentProduct] = useState('aplicativo')
-  const [currentSubProduct, setCurrentSubProduct] = useState('')
+  const [currentSubProduct, setCurrentSubProduct] = useState('geral')
   const [activePage, setActivePage] = useState('roadmap')
+  const [presentationMode, setPresentationMode] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   
   const {
     roadmapItems,
     okrs,
     solicitacoes,
-    minhasSolicitacoes,
     solicitacaoVotes,
     mySolicitacaoVotes,
     loading,
@@ -52,11 +52,11 @@ function App() {
     updateRoadmapItemStatus,
     saveOKR,
     deleteOKR,
-    reloadData,
     deleteRoadmapItemsBulk,
     createSolicitacao,
     toggleSolicitacaoVote,
     deleteOwnSolicitacao,
+    loadSolicitacoes,
     loadSolicitacaoVotes,
   } = useSupabaseData()
 
@@ -85,6 +85,40 @@ function App() {
     
     checkSession()
   }, [])
+
+  // Navegação por setas em modo apresentação e ESC para sair
+  useEffect(() => {
+    if (!presentationMode) return
+    const products = ['aplicativo','web','parcerias','ai','automacao']
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setPresentationMode(false)
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(()=>{})
+        }
+        return
+      }
+      const idx = products.indexOf(currentProduct)
+      if (e.key === 'ArrowRight') {
+        const next = products[(idx + 1 + products.length) % products.length]
+        handleProductChange(next)
+      } else if (e.key === 'ArrowLeft') {
+        const prev = products[(idx - 1 + products.length) % products.length]
+        handleProductChange(prev)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [presentationMode, currentProduct])
+
+  // Entrar/sair tela cheia ao alternar modo
+  useEffect(() => {
+    if (presentationMode) {
+      document.documentElement.requestFullscreen?.().catch(()=>{})
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(()=>{})
+    }
+  }, [presentationMode])
 
   // Buscar nome do usuário do banco
   const loadUserName = async (userId) => {
@@ -131,16 +165,15 @@ function App() {
   // Recarregar solicitações e votos quando logar ou ao abrir a aba de solicitações
   useEffect(() => {
     if (activePage === 'requests') {
-      try { loadSolicitacoes() } catch(_) {}
-      try { loadSolicitacaoVotes() } catch(_) {}
+      try { loadSolicitacoes() } catch (e) { console.warn('Falha ao carregar solicitações', e) }
+      try { loadSolicitacaoVotes() } catch (e) { console.warn('Falha ao carregar votos', e) }
     }
   }, [activePage])
 
   const checkDatabaseSetup = async () => {
-    if (isMockMode()) {
+    if (isMockMode() || !hasSupabase) {
       // Em modo mock, não precisa verificar banco - já está "pronto"
       console.log('🎭 Modo mock ativo - pulando verificação de banco')
-      setDatabaseReady(true)
       return
     }
     
@@ -162,11 +195,11 @@ function App() {
           setShowDatabaseSetup(true)
         } else {
           // Outros erros, assumir que o banco está configurado
-          setDatabaseReady(true)
+          // seguir sem bloquear
         }
       } else {
         // Sem erros, banco está configurado
-        setDatabaseReady(true)
+        // ok
       }
     } catch (error) {
       console.error('Erro ao verificar configuração do banco:', error)
@@ -176,7 +209,6 @@ function App() {
 
   const handleDatabaseSetupComplete = () => {
     setShowDatabaseSetup(false)
-    setDatabaseReady(true)
   }
 
   // Loading da sessão
@@ -202,7 +234,7 @@ function App() {
   }
 
   // Se precisar configurar o banco, mostrar tela de configuração
-  if (showDatabaseSetup) {
+  if (showDatabaseSetup && hasSupabase) {
     return <DatabaseSetup onSetupComplete={handleDatabaseSetupComplete} />
   }
 
@@ -250,7 +282,11 @@ function App() {
 
   const handleProductChange = (productId) => {
     setCurrentProduct(productId)
-    setCurrentSubProduct('')
+    if (productId === 'web' || productId === 'aplicativo') {
+      setCurrentSubProduct('geral')
+    } else {
+      setCurrentSubProduct('')
+    }
   }
 
   const handleSubProductChange = (subProductId) => {
@@ -295,7 +331,7 @@ function App() {
 
   const canEdit = session && requireRole('editor')
 
-  // Derivar minhas solicitações diretamente do estado atual + sessão (sem hooks)
+  // Derivar minhas solicitações diretamente do estado atual + sessão (sem memo para evitar ordem de hooks)
   const myRequests = (() => {
     const all = Array.isArray(solicitacoes) ? solicitacoes : []
     const uid = session?.id
@@ -315,6 +351,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
 
+      {!presentationMode && (
       <aside className={`hidden sm:flex sticky top-0 h-screen shrink-0 overflow-y-auto flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 transition-all duration-200`}>
         {/* Header do Menu com Logo */}
         <button aria-label="Alternar menu" onClick={()=>setSidebarOpen(o=>!o)} className={`w-full flex items-center justify-center ${sidebarOpen ? 'px-3' : 'px-2'} py-2 rounded hover:bg-white/10 mb-4`}>
@@ -367,24 +404,18 @@ function App() {
               {!sidebarOpen && <div className="h-px bg-white/20 my-2"></div>}
             </div>
             <div className="space-y-1">
-              <button onClick={()=>setActivePage('roadmap')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
-                <Target className="h-5 w-5 text-white shrink-0" />
+              <button onClick={()=>{ setActivePage('roadmap'); handleProductChange(currentProduct); }} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='roadmap'?'bg-white/10':''}`}>
+                <ClipboardList className="h-5 w-5 text-white shrink-0" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Roadmap</span>
               </button>
               <button onClick={()=>setActivePage('requests')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='requests'?'bg-white/10':''}`}>
-                <FileText className="h-5 w-5 shrink-0" />
+                <EnvelopeOpenDown className="h-5 w-5 text-white" />
                 <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Solicitações</span>
               </button>
               {canEdit && (
-                <button onClick={()=>setShowOKRProgress(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
-                  <BarChart3 className="h-5 w-5 shrink-0" />
-                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Progresso OKRs</span>
-                </button>
-              )}
-              {canEdit && (
-                <button onClick={()=>setShowOKRManager(true)} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0`}>
-                  <Settings className="h-5 w-5 shrink-0" />
-                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Gerenciar OKRs</span>
+                <button onClick={()=>setActivePage('okrs')} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 [&_svg]:shrink-0 ${activePage==='okrs'?'bg-white/10':''}`}>
+                  <Target className="h-5 w-5 shrink-0" />
+                  <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>OKRs</span>
                 </button>
               )}
             </div>
@@ -435,14 +466,24 @@ function App() {
 
         {/* Logout no final */}
         <div className="pt-4 border-t border-white/10">
-          <button onClick={()=>{ logout(); window.location.reload() }} className={`w-full flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 text-red-200`}>
-            <LogOut className="h-5 w-5 shrink-0" />
-            <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
-          </button>
+          <div className={`flex items-center ${sidebarOpen ? 'justify-between px-3' : 'justify-center px-2'} gap-2`}>
+            {session && (
+              <div className={`text-white text-xs bg-white/10 px-2 py-1 rounded ${sidebarOpen ? 'inline-flex items-center gap-1' : 'hidden'}`}>
+                <span>👋</span>
+                <span>Olá, {userName || session.nome || 'Usuário'}</span>
+              </div>
+            )}
+            <button onClick={()=>{ logout(); window.location.reload() }} className={`flex items-center ${sidebarOpen ? 'justify-start gap-2 px-3' : 'justify-center px-2'} py-2 rounded hover:bg-white/10 text-red-200`}>
+              <LogOut className="h-5 w-5 shrink-0" />
+              <span className={`${sidebarOpen ? 'inline' : 'hidden'}`}>Sair</span>
+            </button>
+          </div>
         </div>
       </aside>
+      )}
       <div className="flex-1">
       {/* Header */}
+      {!presentationMode && (
       <header className="bg-company-dark-blue shadow-sm border-b">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -466,7 +507,7 @@ function App() {
                 <>Edição de Perfil</>
               )}
               {activePage==='okrs' && (
-                <>Gerenciar OKRs</>
+                <>OKRs</>
               )}
               {activePage==='requests' && (
                 <>Solicitações</>
@@ -474,13 +515,7 @@ function App() {
             </h1>
             <div className="flex space-x-3">
               {/* Nome do usuário logado */}
-              {session && (
-                <div className="text-white text-sm bg-white/10 px-3 py-1 rounded flex items-center gap-2">
-                  <span>👋</span>
-                  <span>Olá, {userName || session.nome || 'Usuário'}</span>
-                  <span className="text-xs opacity-75">({session.role})</span>
-                </div>
-              )}
+              {/* Saudação movida para o menu lateral */}
               {isMockMode() && (
                 <div className="text-blue-200 text-sm bg-blue-600 px-3 py-1 rounded flex items-center gap-2">
                   <span>🎭</span>
@@ -492,17 +527,14 @@ function App() {
                   Erro: {error}
                 </div>
               )}
-              <Button
-                onClick={reloadData}
-                variant="outline"
-                className="flex items-center space-x-2 bg-white text-company-dark-blue border-white hover:bg-gray-100"
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                <span>Atualizar</span>
-              </Button>
+              {/* Botão Atualizar ocultado */}
               {/* Progresso OKRs movido para menu lateral */}
               {/* removido Sair do header como solicitado */}
+              {canEdit && (
+                <BulkImportModal onImport={handleSaveItem} onUpsert={async (payload) => {
+                  await saveRoadmapItem(payload)
+                }} />
+              )}
               {canEdit && (
               <Button
                 onClick={handleAddItem}
@@ -512,15 +544,19 @@ function App() {
                 <span>Novo Item</span>
               </Button>
               )}
-              {canEdit && (
-                <BulkImportModal onImport={handleSaveItem} onUpsert={async (payload) => {
-                  await saveRoadmapItem(payload)
-                }} />
+              {activePage==='roadmap' && (
+                <Button
+                  onClick={() => setPresentationMode(true)}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-700 hover:via-fuchsia-700 hover:to-pink-700 text-white shadow-sm"
+                >
+                  <span>Modo Apresentação</span>
+                </Button>
               )}
             </div>
           </div>
         </div>
       </header>
+      )}
 
       {/* Main Content */}
       <main className="w-full px-6 sm:px-8 lg:px-10 py-6">
@@ -552,7 +588,7 @@ function App() {
               currentProduct={currentProduct}
               currentSubProduct={currentSubProduct}
               onDeleteBulk={handleDeleteBulk}
-              canEdit={canEdit}
+              canEdit={presentationMode ? false : canEdit}
             />
           </div>
         )}
@@ -573,13 +609,11 @@ function App() {
           <UsersAdmin />
         )}
         {activePage==='okrs' && (
-          <OKRManager
+          <OKRsPage
             okrs={okrs}
             roadmapItems={roadmapItems}
             onSaveOKR={handleSaveOKR}
             onDeleteOKR={handleDeleteOKR}
-            onClose={() => setActivePage('roadmap')}
-            asPage={true}
           />
         )}
         {activePage==='requests' && (
@@ -594,16 +628,16 @@ function App() {
               }}
               solicitacaoVotes={solicitacaoVotes || {}}
               mySolicitacaoVotes={mySolicitacaoVotes || {}}
-              onToggleVote={async (id)=>{ try { await toggleSolicitacaoVote(id); await loadSolicitacaoVotes() } catch(_) {} }}
-              onDeleteOwn={async (id)=>{ try { await deleteOwnSolicitacao(id); await loadSolicitacoes(); await loadSolicitacaoVotes() } catch(_) {} }}
+              onToggleVote={async (id)=>{ try { await toggleSolicitacaoVote(id); await loadSolicitacaoVotes() } catch(e) { console.warn('Falha ao alternar voto', e) } }}
+              onDeleteOwn={async (id)=>{ try { await deleteOwnSolicitacao(id); await loadSolicitacoes(); await loadSolicitacaoVotes() } catch(e) { console.warn('Falha ao excluir/atualizar solicitações', e) } }}
               onCreate={async (payload, file) => {
                 try { 
                   await createSolicitacao(payload, file);
                   await loadSolicitacoes();
                   await loadSolicitacaoVotes();
-                } catch(_) {}
+                } catch(e) { console.warn('Falha ao criar/atualizar solicitações', e) }
               }}
-              onInitRefresh={async ()=>{ try { await loadSolicitacoes(); await loadSolicitacaoVotes(); await loadSolicitacoes(); } catch(_) {} }}
+              onInitRefresh={async ()=>{ try { await loadSolicitacoes(); await loadSolicitacaoVotes(); await loadSolicitacoes(); } catch(e) { console.warn('Falha no refresh inicial de solicitações', e) } }}
             />
           </ErrorBoundary>
         )}
@@ -625,33 +659,7 @@ function App() {
         />
       )}
 
-      {showOKRManager && (
-        <OKRManager
-          okrs={okrs}
-          roadmapItems={roadmapItems}
-          onSaveOKR={handleSaveOKR}
-          onDeleteOKR={handleDeleteOKR}
-          onClose={() => setShowOKRManager(false)}
-        />
-      )}
-
-      {showOKRProgress && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-y-auto w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-company-dark-blue">Progresso dos OKRs</h2>
-              <Button
-                variant="outline"
-                onClick={() => setShowOKRProgress(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </Button>
-            </div>
-            <OKRProgress okrs={okrs} roadmapItems={roadmapItems} />
-          </div>
-        </div>
-      )}
+      {/* Modais OKR antigos removidos: agora acessíveis via página OKRs com abas */}
       </div>
     </div>
   )

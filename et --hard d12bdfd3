@@ -1,0 +1,50 @@
+[33ma89bb4b8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull --rebase origin master (finish): returning to refs/heads/master
+[33ma89bb4b8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: pull --rebase origin master (start): checkout a89bb4b869b6510a5a0f576db9711b864427f7a2
+[33md12bdfd3[m HEAD@{2}: commit: Roadmap: toggle de subitens com seta junto da data; correções de largura no modo apresentação
+[33m229e5271[m HEAD@{3}: commit: UsersAdmin: dialog 'Editar perfil' com Cargo; Roadmap: botões reorganizados; modo apresentação; fixes lint
+[33m58833ec2[m HEAD@{4}: commit: Roadmap: exibir período na coluna Item também para Parcerias/AI/Automação (sem subproduto)
+[33m0238b3c4[m HEAD@{5}: commit: Fallback Supabase: esconder tela de configuração quando sem env; não bloquear fluxo; ajuste App para modo localStorage
+[33m836baea9[m HEAD@{6}: pull --rebase origin master (finish): returning to refs/heads/master
+[33m836baea9[m HEAD@{7}: pull --rebase origin master (pick): Roadmap: trimestre atual automático e 'geral' padrão; OKRs unificado com layout; ícones personalizados; correções de lint
+[33m604f5381[m HEAD@{8}: pull --rebase origin master (start): checkout 604f5381ef6b54e9a358f5371aa6e83c5749270f
+[33m7d1cd581[m HEAD@{9}: commit: Roadmap: trimestre atual automático e 'geral' padrão; OKRs unificado com layout; ícones personalizados; correções de lint
+[33med505e78[m HEAD@{10}: commit: Roadmap: datas obrigatórias com foco automático e mensagens; calendário pt-BR; fix refs em Dialogs (forwardRef)
+[33mdd4daf27[m HEAD@{11}: commit: feat(roadmap): filtro de Status (Todos/Concluídos/Ativos) integrado ao trimestre, correção de exibição de concluídos (detecção de sobreposição por mês), simplificação do fluxo no App
+[33mc147b908[m HEAD@{12}: commit: feat(roadmap): ordenar por status>início>fim, layout responsivo da tabela, barras com borda suave, cabeçalho sticky com trimestre visível, data ao lado do subproduto, novo campo opcional 'Descrição' (form/visualização/importação), ajustes de largura (Item/OKR/Métrica/Tese/Ações) e checkbox centralizado
+[33m30c83ae9[m HEAD@{13}: commit: feat: barra de progresso automaticamente 100% para status 'Concluída'
+[33mee6e468a[m HEAD@{14}: commit: feat: implementa sistema completo de usuários com campo nome e correções no roadmap
+[33m02483301[m HEAD@{15}: rebase (finish): returning to refs/heads/master
+[33m02483301[m HEAD@{16}: rebase (pick): Solicitações:AdicionarFuncionalidade
+[33mbec224ac[m HEAD@{17}: commit: rebase: resolve solicitacoes integration
+[33m97f4e2e6[m HEAD@{18}: pull --rebase (start): checkout 97f4e2e6297d7bc68fea08b78c5cd6164ffd66cb
+[33m605e13b0[m HEAD@{19}: commit: Solicitações:AdicionarFuncionalidade
+[33m5ffc6ca7[m HEAD@{20}: commit: feat(solicitacoes): adicionar seção de Solicitações (tabela, hook, página, sidebar)
+[33m5c86f2db[m HEAD@{21}: commit: style(forms): adicionar padding e ícone ChevronDown aos selects (Produto/Sub-produto/Status/OKR)
+[33m16da03f4[m HEAD@{22}: commit: style(roadmap): centralizar verticalmente botões na coluna Ações
+[33meb0a6c4c[m HEAD@{23}: commit: style(status): usar o mesmo verde da tag Brasil (#16A34A)
+[33m16b02358[m HEAD@{24}: commit: style(ui): centralizar ícones do sidebar quando recolhido (justify-center)
+[33m82df158d[m HEAD@{25}: commit: fix(assets): versionar imagens de logo (color/white) e limpar favicons antigos; atualizar sidebar/login em prod
+[33m083e5504[m HEAD@{26}: commit: chore(ui): usar novo favicon.png no site
+[33m806844b9[m HEAD@{27}: commit: feat(login): usar /starbem-logo-color.png na tela de login
+[33m9ea91ebf[m HEAD@{28}: commit: chore(ui): adicionar estrela branca do logo para sidebar recolhido
+[33m31db9144[m HEAD@{29}: commit: feat(ui): menu lateral fixo com scroll interno (sticky sidebar)
+[33md4e0f6d9[m HEAD@{30}: commit: chore: revisão final e push de pendências (UI, filtros, diálogos, build)
+[33mba39025d[m HEAD@{31}: commit: feat(auth): toggle de visibilidade de senha (olhinho) no Login, Criar Usuário e Edição de Perfil
+[33mb48547f7[m HEAD@{32}: commit: feat(roadmap): cores distintas por subproduto e label sem underscore
+[33ma8b15d94[m HEAD@{33}: commit: feat(roadmap): setas no cabeçalho do trimestre para navegar entre T anteriores/próximos
+[33m03088d18[m HEAD@{34}: commit: style(roadmap): diminuir ainda mais largura das colunas de meses e evitar quebra do título
+[33mb8faafbd[m HEAD@{35}: commit: style(roadmap): reduzir ainda mais largura de Trimestre/meses e compactar células
+[33m1922ec41[m HEAD@{36}: commit: feat(roadmap): reduzir largura dos meses e ampliar colunas de métricas e tese
+[33m74dc785b[m HEAD@{37}: commit: chore(ui): substitui favicon por estrela em SVG
+[33m5f11f056[m HEAD@{38}: commit: chore(vercel): SPA rewrite to /index.html for Vercel routing
+[33m5828e140[m HEAD@{39}: commit: chore(git): parar de versionar node_modules e limpar arquivo inválido
+[33mbf46253c[m HEAD@{40}: commit: fix(import/normalization): padroniza produto/subproduto (Automação->automacao) para exibir corretamente no Roadmap; normalização com remoção de acentos
+[33m414044c0[m HEAD@{41}: commit: feat(roadmap): Web > Geral mostra todos os subprodutos respeitando filtro de trimestre; ajustes de UI/OKR e correções diversas
+[33mf193ed88[m HEAD@{42}: commit: feat(users): botão 'Criar Usuário' com modal (email/senha/perfil); remoção do formulário inline; busca mantida
+[33me74c6f33[m HEAD@{43}: commit: style: sidebar ícone Roadmap=Target; manter ícones alinhados no colapso; remover 'Sair' do header
+[33mf25bb954[m HEAD@{44}: commit: feat(sidebar): retraível/expansível com estrela; item Roadmap; estilos azul escuro
+[33m526cb6ce[m HEAD@{45}: commit: feat(users): criar usuário + busca + tabela com edição/exclusão; sidebar azul escuro com Roadmap e estrela para toggle
+[33m179ad7d2[m HEAD@{46}: commit: fix: fechar divs no App.jsx (JSX não terminado)
+[33mf9eb5bf1[m HEAD@{47}: commit: feat: sidebar com Gerenciar Usuários, Edição de Perfil e Sair; corrigir rótulo; páginas dedicadas
+[33me3d1d951[m HEAD@{48}: commit: feat: seed admin padrão e ajuste da marca (estrela) no login
+[33m4ecc6b2b[m HEAD@{49}: commit: feat: autenticação local (login/logout), autorização por papéis (viewer/editor/admin) e gerenciamento de usuários (CRUD)

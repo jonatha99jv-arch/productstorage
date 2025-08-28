@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Edit, Trash2, Search, Calendar } from 'lucide-react'
+import { Edit, Trash2, Search, Calendar, Copy } from 'lucide-react'
 
 const QUARTERS = {
   'Q1': { label: 'T1', months: ['Jan', 'Fev', 'Mar'], monthNumbers: [1, 2, 3] },
@@ -66,7 +66,7 @@ const formatSubProductLabel = (value) => {
   return String(value).replaceAll('_', ' ').replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
-const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
+const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, onDuplicateItem, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const getDefaultQuarter = () => {
     const m = new Date().getMonth() + 1
     if (m <= 3) return 'Q1'
@@ -227,6 +227,11 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
 
   const handleStatusChange = (itemId, newStatus) => {
     onUpdateItemStatus(itemId, newStatus)
+  }
+
+  const handleDuplicate = (item) => {
+    if (!item) return
+    onDuplicateItem(item)
   }
 
   const getOKRName = (okrId) => {
@@ -558,6 +563,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                       <div className="flex space-x-1 justify-center items-center">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="h-8 w-8 p-0 hover:bg-blue-100">
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDuplicate(item)} className="h-8 w-8 p-0 hover:bg-purple-100">
+                          <Copy className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="h-8 w-8 p-0 hover:bg-red-100">
                           <Trash2 className="h-4 w-4" />

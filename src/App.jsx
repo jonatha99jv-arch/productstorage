@@ -272,6 +272,12 @@ function App() {
     await updateRoadmapItemStatus(itemId, newStatus)
   }
 
+  const handleDuplicateItem = async (item) => {
+    if (!item) return
+    const payload = { ...item, id: undefined, nome: `${item.nome} (cópia)` }
+    await saveRoadmapItem(payload)
+  }
+
   const handleSaveOKR = async (okrData) => {
     await saveOKR(okrData)
   }
@@ -585,6 +591,7 @@ function App() {
               onEditItem={handleEditItem}
               onDeleteItem={handleDeleteItem}
               onUpdateItemStatus={handleUpdateItemStatus}
+              onDuplicateItem={handleDuplicateItem}
               currentProduct={currentProduct}
               currentSubProduct={currentSubProduct}
               onDeleteBulk={handleDeleteBulk}

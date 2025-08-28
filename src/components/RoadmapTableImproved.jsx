@@ -67,7 +67,14 @@ const formatSubProductLabel = (value) => {
 }
 
 const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
-  const [selectedQuarter, setSelectedQuarter] = useState('Q1')
+  const getDefaultQuarter = () => {
+    const m = new Date().getMonth() + 1
+    if (m <= 3) return 'Q1'
+    if (m <= 6) return 'Q2'
+    if (m <= 9) return 'Q3'
+    return 'Q4'
+  }
+  const [selectedQuarter, setSelectedQuarter] = useState(getDefaultQuarter())
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
   const [selectedIds, setSelectedIds] = useState([])

@@ -268,8 +268,14 @@ function App() {
     }
   }
 
-  const handleUpdateItemStatus = async (itemId, newStatus) => {
-    await updateRoadmapItemStatus(itemId, newStatus)
+  const handleUpdateItemStatus = async (itemId, newStatus, updatedItem = null) => {
+    if (updatedItem) {
+      // Se um item atualizado foi fornecido, salvar o item completo
+      await saveRoadmapItem(updatedItem)
+    } else {
+      // Comportamento original: apenas atualizar o status
+      await updateRoadmapItemStatus(itemId, newStatus)
+    }
   }
 
   const handleDuplicateItem = async (item) => {
@@ -355,7 +361,7 @@ function App() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className={`min-h-screen bg-gray-50 flex ${presentationMode ? 'presentation-mode' : ''}`}>
 
       {!presentationMode && (
       <aside className={`hidden sm:flex sticky top-0 h-screen shrink-0 overflow-y-auto flex-col ${sidebarOpen ? 'w-64' : 'w-16'} bg-company-dark-blue text-white px-2 py-4 transition-all duration-200`}>

@@ -1,128 +1,88 @@
-# Melhorias Implementadas no Roadmap Interativo
+# Melhorias Implementadas
 
-## Resumo das Melhorias
+## Funcionalidades Principais
 
-Este documento descreve as melhorias implementadas no projeto Roadmap Interativo, integrando o Supabase para persistência de dados na nuvem.
+### Sistema de Status para Subitens
+- **Status Independentes**: Os subitens agora possuem status individuais que não interferem no status do item principal
+- **Mesmos Status Disponíveis**: Utiliza os mesmos status do sistema principal (Não Iniciado, Próxima Sprint, Sprint Atual, Em Finalização, Concluída)
+- **Edição em Tempo Real**: É possível alterar o status dos subitens tanto na tela de edição quanto na visualização da tabela
+- **Compatibilidade**: Mantém compatibilidade com dados antigos, convertendo automaticamente subitens em string para a nova estrutura
 
-## 1. Integração com Supabase
+### Interface de Usuário
+- **Modal de Edição**: Adicionado campo de seleção de status para cada subitem
+- **Visualização na Tabela**: Subitens expandidos mostram status com cores e indicadores visuais
+- **Edição Rápida**: Dropdown inline para alterar status sem abrir o modal
+- **Indicadores Visuais**: Bordas coloridas e ícones para identificar rapidamente o status de cada subitem
 
-### Configuração
-- **Cliente Supabase**: Criado arquivo `src/lib/supabaseClient.js` para configurar a conexão
-- **Variáveis de Ambiente**: Configurado arquivo `.env` com as credenciais do Supabase
-- **Dependências**: Instalado `@supabase/supabase-js` para comunicação com o banco
+### Importação em Massa
+- **Suporte a Subitens**: Nova coluna opcional "Subitens" na importação via planilha
+- **Formato**: Subitens separados por ponto e vírgula (;)
+- **Status Padrão**: Todos os subitens importados recebem status "Não Iniciado" por padrão
 
-### Estrutura do Banco de Dados
-- **Tabela `roadmap_items`**: Para armazenar itens do roadmap
-- **Tabela `okrs`**: Para armazenar OKRs (Objectives and Key Results)
-- **Schema SQL**: Criado arquivo `database_schema.sql` com a estrutura completa
+### Estrutura de Dados
+- **Nova Estrutura**: Subitens agora são objetos com propriedades `texto` e `status`
+- **Migração Automática**: Sistema converte automaticamente subitens antigos para nova estrutura
+- **Persistência**: Status dos subitens são salvos no banco de dados junto com o item principal
 
-## 2. Hook Personalizado para Gerenciamento de Dados
+## Componentes Atualizados
 
-### `useSupabaseData.js`
-- **Funcionalidades**:
-  - Carregamento automático de dados do Supabase
-  - Fallback para localStorage em caso de erro
-  - Operações CRUD para roadmap items e OKRs
-  - Sincronização bidirecional entre Supabase e estado local
-  - Tratamento de erros robusto
+### ItemModal.jsx
+- Adicionado campo de seleção de status para cada subitem
+- Atualizada estrutura de dados para suportar objetos de subitem
+- Mantida compatibilidade com dados existentes
 
-### Principais Funções
-- `saveRoadmapItem()`: Criar/atualizar itens do roadmap
-- `deleteRoadmapItem()`: Remover itens do roadmap
-- `updateRoadmapItemStatus()`: Atualizar status de itens
-- `saveOKR()`: Criar/atualizar OKRs
-- `deleteOKR()`: Remover OKRs
-- `reloadData()`: Recarregar dados do Supabase
+### ItemModalImproved.jsx
+- Interface melhorada para edição de status de subitens
+- Layout responsivo com campos de texto e seleção de status
+- Validação e tratamento de erros aprimorados
 
-## 3. Melhorias na Interface do Usuário
+### RoadmapTableImproved.jsx
+- Visualização expandida dos subitens com status
+- Edição inline de status via dropdown
+- Indicadores visuais com cores e bordas
+- Função de atualização de status em tempo real
 
-### Indicadores de Status
-- **Loading State**: Indicador visual durante carregamento de dados
-- **Error Handling**: Exibição de erros na interface
-- **Botão Atualizar**: Permite recarregar dados manualmente
+### useSupabaseData.js
+- Funções de mapeamento atualizadas para nova estrutura
+- Suporte a conversão automática de dados antigos
+- Persistência de status de subitens no banco
 
-### Componente de Configuração
-- **DatabaseSetup**: Tela de configuração inicial do banco de dados
-- **Verificação Automática**: Detecta se as tabelas existem
-- **Fallback**: Opção de usar localStorage se a configuração falhar
+### BulkImportModal.jsx
+- Suporte a importação de subitens via planilha
+- Processamento automático de múltiplos subitens
+- Documentação atualizada para usuários
 
-## 4. Funcionalidades Implementadas
+## Como Usar
 
-### Persistência de Dados
-- ✅ Dados salvos automaticamente no Supabase
-- ✅ Sincronização em tempo real
-- ✅ Backup local com localStorage
-- ✅ Recuperação automática em caso de falha
+### Criando/Editando Itens
+1. Abra o modal de criação/edição de item
+2. Adicione subitens usando o botão "Adicionar Subitem"
+3. Para cada subitem, preencha o texto e selecione o status
+4. Salve o item
 
-### Interface Aprimorada
-- ✅ Indicador de carregamento
-- ✅ Tratamento de erros visível
-- ✅ Botão de atualização manual
-- ✅ Configuração inicial guiada
+### Visualizando Status
+1. Na tabela principal, clique na seta ao lado de um item para expandir
+2. Os subitens aparecerão com seus respectivos status
+3. Use o dropdown inline para alterar status rapidamente
 
-### Robustez
-- ✅ Fallback para localStorage
-- ✅ Tratamento de erros de rede
-- ✅ Verificação automática de conectividade
-- ✅ Recuperação graceful de falhas
+### Importando via Planilha
+1. Adicione uma coluna "Subitens" na planilha
+2. Separe múltiplos subitens com ponto e vírgula (;)
+3. Exemplo: "Subitem 1; Subitem 2; Subitem 3"
+4. Todos os subitens receberão status "Não Iniciado" por padrão
 
-## 5. Arquivos Modificados/Criados
+## Benefícios
 
-### Novos Arquivos
-- `src/lib/supabaseClient.js` - Cliente Supabase
-- `src/hooks/useSupabaseData.js` - Hook para gerenciamento de dados
-- `src/components/DatabaseSetup.jsx` - Componente de configuração
-- `database_schema.sql` - Schema do banco de dados
-- `.env` - Variáveis de ambiente
+- **Melhor Controle**: Acompanhamento granular do progresso de cada subitem
+- **Visibilidade**: Status claros e visuais para toda a equipe
+- **Flexibilidade**: Status independentes permitem planejamento mais preciso
+- **Produtividade**: Edição rápida sem necessidade de abrir modais
+- **Compatibilidade**: Migração automática sem perda de dados
 
-### Arquivos Modificados
-- `src/App.jsx` - Integração com Supabase e melhorias na UI
-- `package.json` - Adicionada dependência do Supabase
+## Notas Técnicas
 
-## 6. Benefícios das Melhorias
-
-### Para o Usuário
-- **Persistência**: Dados não são perdidos ao fechar o navegador
-- **Sincronização**: Acesso aos dados de qualquer dispositivo
-- **Confiabilidade**: Sistema robusto com fallbacks
-- **Performance**: Carregamento otimizado de dados
-
-### Para o Desenvolvimento
-- **Escalabilidade**: Banco de dados na nuvem
-- **Manutenibilidade**: Código organizado e modular
-- **Flexibilidade**: Fácil extensão de funcionalidades
-- **Monitoramento**: Logs detalhados de operações
-
-## 7. Próximos Passos Recomendados
-
-### Configuração do Banco
-1. Acessar o painel do Supabase
-2. Executar o script `database_schema.sql` no SQL Editor
-3. Configurar políticas de segurança conforme necessário
-4. Testar a conectividade
-
-### Melhorias Futuras
-- Implementar autenticação de usuários
-- Adicionar colaboração em tempo real
-- Implementar notificações push
-- Adicionar analytics e métricas
-- Implementar backup automático
-
-## 8. Instruções de Uso
-
-### Primeira Execução
-1. O sistema detectará automaticamente se o banco está configurado
-2. Se necessário, será exibida a tela de configuração
-3. Seguir as instruções para configurar o banco de dados
-4. Após a configuração, o sistema funcionará normalmente
-
-### Operação Normal
-- Todos os dados são salvos automaticamente no Supabase
-- Em caso de problemas de conectividade, o sistema usa localStorage
-- Use o botão "Atualizar" para sincronizar manualmente
-- Erros são exibidos na interface para transparência
-
-## Conclusão
-
-As melhorias implementadas transformaram o Roadmap Interativo de uma aplicação local para uma solução robusta na nuvem, mantendo a compatibilidade com o funcionamento offline e adicionando recursos de sincronização e persistência de dados.
+- **Migração Automática**: Sistema detecta e converte automaticamente dados antigos
+- **Performance**: Atualizações de status são otimizadas para evitar recarregamentos desnecessários
+- **Validação**: Campos obrigatórios e validação de dados mantidos
+- **Responsividade**: Interface adaptada para diferentes tamanhos de tela
 

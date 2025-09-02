@@ -7,6 +7,17 @@ import { Edit, Trash2, Clock, Target } from 'lucide-react'
 const RoadmapItem = ({ item, okrs, onEdit, onDelete }) => {
   const [isDragging, setIsDragging] = useState(false)
 
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'nao_iniciado': 'bg-red-500',
+      'proxima_sprint': 'bg-orange-500',
+      'sprint_atual': 'bg-yellow-500',
+      'em_finalizacao': 'bg-green-500',
+      'concluida': 'bg-green-600'
+    }
+    return colorMap[status] || 'bg-gray-500'
+  }
+
   // Encontrar o OKR vinculado
   const linkedOKR = okrs.find(okr => okr.id === item.okrId)
 
@@ -102,9 +113,16 @@ const RoadmapItem = ({ item, okrs, onEdit, onDelete }) => {
           <div className="text-xs">
             <div className="font-medium text-gray-700 mb-1">Subitens:</div>
             <ul className="list-disc list-inside space-y-1 text-gray-600">
-              {item.subitens.slice(0, 2).map((subitem, index) => (
-                <li key={index} className="line-clamp-1">{subitem}</li>
-              ))}
+              {item.subitens.slice(0, 2).map((subitem, index) => {
+                // Converter subitem antigo (string) para nova estrutura
+                const subitemObj = typeof subitem === 'string' ? { texto: subitem, status: 'nao_iniciado' } : subitem
+                return (
+                                                     <li key={index} className="line-clamp-1 flex items-start justify-between gap-2">
+                    <span className="flex-1 min-w-0">{subitemObj.texto}</span>
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(subitemObj.status)}`}></span>
+                  </li>
+                )
+              })}
               {item.subitens.length > 2 && (
                 <li className="text-gray-400">+{item.subitens.length - 2} mais...</li>
               )}

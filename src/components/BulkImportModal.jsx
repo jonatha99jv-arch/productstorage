@@ -15,7 +15,7 @@ const REQUIRED_HEADERS = [
 ]
 
 // Cabeçalhos opcionais
-const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição'] // 'Descrição' é opcional
+const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição', 'Subitens'] // 'Descrição' e 'Subitens' são opcionais
 
 const subProductMap = {
   'geral': 'geral',
@@ -107,10 +107,18 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const statusLabel = String(row[idx['Status']] || '').trim()
         const produto = normalizeProduct(row[idx['Produto']])
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
+        const subitensCell = idx['Subitens'] != null ? row[idx['Subitens']] : ''
         let subProduto = ''
         if (produto === 'web' || produto === 'aplicativo') {
           const key = normalizeText(subProdCell || 'geral')
           subProduto = subProductMap[key] || ''
+        }
+
+        // Processar subitens se fornecidos
+        let subitens = []
+        if (subitensCell) {
+          const subitensList = String(subitensCell).split(';').map(s => s.trim()).filter(s => s)
+          subitens = subitensList.map(subitem => ({ texto: subitem, status: 'nao_iniciado' }))
         }
 
         if (!item) {
@@ -150,7 +158,8 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           status: statusMap[statusLabel] || 'nao_iniciado',
           okrId: '',
           produto,
-          subProduto
+          subProduto,
+          subitens
         }
 
         try {
@@ -195,6 +204,8 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
             <br />
             <span className="text-xs text-gray-500">
               Nota: Se não tiver "Data Final", pode usar "Duração" (em meses) que será convertida automaticamente
+              <br />
+              Coluna "Subitens" (opcional): Use ponto e vírgula (;) para separar múltiplos subitens. Ex: "Subitem 1; Subitem 2; Subitem 3"
             </span>
           </p>
           {(successCount > 0 || errorCount > 0 || logs.length > 0) && (

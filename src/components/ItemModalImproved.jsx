@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon, Plus, X, ChevronDown } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const STATUS_OPTIONS = [
   { value: 'nao_iniciado', label: 'Não Iniciado' },
@@ -39,7 +40,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     id: null,
     nome: '',
-    subitens: [''],
+    subitens: [{ texto: '', status: 'nao_iniciado' }],
     inputOutputMetric: '',
     teseProduto: '',
     descricao: '',
@@ -65,10 +66,20 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
   useEffect(() => {
     if (item) {
+      // Converter subitens antigos (strings) para nova estrutura (objetos com status)
+      const subitensFormatados = item.subitens && item.subitens.length > 0 
+        ? item.subitens.map(subitem => {
+            if (typeof subitem === 'string') {
+              return { texto: subitem, status: 'nao_iniciado' }
+            }
+            return subitem
+          })
+        : [{ texto: '', status: 'nao_iniciado' }]
+
       setFormData({
         id: item.id || null,
         nome: item.nome || '',
-        subitens: item.subitens && item.subitens.length > 0 ? item.subitens : [''],
+        subitens: subitensFormatados,
         inputOutputMetric: item.inputOutputMetric || '',
         teseProduto: item.teseProduto || '',
         descricao: item.descricao || '',
@@ -91,9 +102,9 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
     setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
-  const handleSubitemChange = (index, value) => {
+  const handleSubitemChange = (index, field, value) => {
     const newSubitens = [...formData.subitens]
-    newSubitens[index] = value
+    newSubitens[index] = { ...newSubitens[index], [field]: value }
     setFormData(prev => ({
       ...prev,
       subitens: newSubitens
@@ -103,7 +114,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const addSubitem = () => {
     setFormData(prev => ({
       ...prev,
-      subitens: [...prev.subitens, '']
+      subitens: [...prev.subitens, { texto: '', status: 'nao_iniciado' }]
     }))
   }
 
@@ -161,7 +172,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
     const dataToSave = {
       ...formData,
-      subitens: formData.subitens.filter(subitem => subitem.trim() !== ''),
+      subitens: formData.subitens.filter(subitem => subitem.texto.trim() !== ''),
       dataInicio: formData.dataInicio ? formData.dataInicio.toISOString() : null,
       dataFim: formData.dataFim ? formData.dataFim.toISOString() : null
     }
@@ -301,10 +312,26 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             {formData.subitens.map((subitem, index) => (
               <div key={index} className="flex items-center space-x-2 mt-2">
                 <Input
-                  value={subitem}
-                  onChange={(e) => handleSubitemChange(index, e.target.value)}
+                  value={subitem.texto}
+                  onChange={(e) => handleSubitemChange(index, 'texto', e.target.value)}
                   placeholder={`Subitem ${index + 1}`}
+                  className="flex-1"
                 />
+                <Select
+                  value={subitem.status}
+                  onValueChange={(value) => handleSubitemChange(index, 'status', value)}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formData.subitens.length > 1 && (
                   <Button
                     type="button"

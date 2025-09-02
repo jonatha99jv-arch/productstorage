@@ -35,6 +35,16 @@ const STATUS_CONFIG = {
 }
 
 const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus }) => {
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'nao_iniciado': 'bg-red-500',
+      'proxima_sprint': 'bg-orange-500',
+      'sprint_atual': 'bg-yellow-500',
+      'em_finalizacao': 'bg-green-500',
+      'concluida': 'bg-green-600'
+    }
+    return colorMap[status] || 'bg-gray-500'
+  }
   const [selectedQuarter, setSelectedQuarter] = useState('Q1')
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -169,9 +179,16 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
                         <div className="text-sm text-gray-600">
                           <div className="font-medium">Subitens:</div>
                           <ul className="list-disc list-inside space-y-1">
-                            {item.subitens.map((subitem, index) => (
-                              <li key={index} className="text-xs">{subitem}</li>
-                            ))}
+                            {item.subitens.map((subitem, index) => {
+                              // Converter subitem antigo (string) para nova estrutura
+                              const subitemObj = typeof subitem === 'string' ? { texto: subitem, status: 'nao_iniciado' } : subitem
+                              return (
+                                                                                                 <li key={index} className="text-xs flex items-start justify-between gap-2">
+                                  <span className="flex-1 min-w-0">{subitemObj.texto}</span>
+                                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(subitemObj.status)}`}></span>
+                                </li>
+                              )
+                            })}
                           </ul>
                         </div>
                       )}

@@ -151,6 +151,7 @@ export const useSupabaseData = () => {
     const tags = Array.isArray(dbItem.tags) ? dbItem.tags : []
     let dataFim = null
     const subitens = []
+    
     for (const tag of tags) {
       if (typeof tag === 'string' && tag.startsWith('dataFim:')) {
         const parts = tag.split(':')
@@ -160,8 +161,18 @@ export const useSupabaseData = () => {
             dataFim = new Date(yy, mm - 1, dd)
           }
         }
+      } else if (typeof tag === 'string' && tag.startsWith('subitem:')) {
+        // Nova estrutura: subitem com status
+        try {
+          const subitemData = JSON.parse(tag.substring(8)) // Remove 'subitem:' prefix
+          subitens.push(subitemData)
+        } catch (_) {
+          // Fallback: tratar como subitem antigo
+          subitens.push(tag)
+        }
       } else if (typeof tag === 'string') {
-        subitens.push(tag)
+        // Compatibilidade com dados antigos: converter string para objeto com status padrão
+        subitens.push({ texto: tag, status: 'nao_iniciado' })
       }
     }
 
@@ -219,7 +230,21 @@ export const useSupabaseData = () => {
       descricao: appItem.descricao || ''
     })
 
-    const tags = Array.isArray(appItem.subitens) ? [...appItem.subitens] : []
+    const tags = []
+    
+    // Adicionar subitens com nova estrutura
+    if (Array.isArray(appItem.subitens)) {
+      appItem.subitens.forEach(subitem => {
+        if (typeof subitem === 'string') {
+          // Compatibilidade: converter string antiga para nova estrutura
+          tags.push(`subitem:${JSON.stringify({ texto: subitem, status: 'nao_iniciado' })}`)
+        } else if (subitem && typeof subitem === 'object' && subitem.texto) {
+          // Nova estrutura: objeto com texto e status
+          tags.push(`subitem:${JSON.stringify(subitem)}`)
+        }
+      })
+    }
+    
     if (appItem.dataFim && appItem.dataFim instanceof Date) {
       tags.push(`dataFim:${appItem.dataFim.getFullYear()}-${String(appItem.dataFim.getMonth() + 1).padStart(2, '0')}-${String(appItem.dataFim.getDate()).padStart(2, '0')}`);
     }

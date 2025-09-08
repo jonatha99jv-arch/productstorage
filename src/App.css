@@ -636,7 +636,37 @@
 }
 
 .roadmap-table .col-month {
-  width: 7%;
+  width: 8%; /* Aumentada de 7% para 8% */
+  min-width: 200px; /* Largura mínima muito maior para telas menores */
+}
+
+/* Ajustes responsivos para colunas dos meses - valores maximizados */
+@media (max-width: 1200px) {
+  .roadmap-table .col-month {
+    width: 13%; /* Aumentada de 12% para 13% */
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 992px) {
+  .roadmap-table .col-month {
+    width: 16%; /* Aumentada de 15% para 16% */
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .roadmap-table .col-month {
+    width: 19%; /* Aumentada de 18% para 19% */
+    min-width: 350px;
+  }
+}
+
+@media (max-width: 576px) {
+  .roadmap-table .col-month {
+    width: 21%; /* Aumentada de 20% para 21% */
+    min-width: 400px;
+  }
 }
 
 .roadmap-table .col-okr {
@@ -644,15 +674,82 @@
 }
 
 .roadmap-table .col-metric {
-  width: 22%;
+  width: 18%; /* Reduzida de 22% para 18% */
 }
 
 .roadmap-table .col-tese {
-  width: 25%;
+  width: 22%; /* Aumentada de 18% para 22% */
+}
+
+/* Ajustes responsivos para outras colunas - otimizadas para dar prioridade às colunas T */
+@media (max-width: 1200px) {
+  .roadmap-table .col-item {
+    width: 12%;
+  }
+  .roadmap-table .col-metric {
+    width: 12%; /* Reduzida de 14% para 12% */
+  }
+  .roadmap-table .col-tese {
+    width: 16%; /* Aumentada de 14% para 16% */
+  }
+}
+
+@media (max-width: 992px) {
+  .roadmap-table .col-item {
+    width: 10%;
+  }
+  .roadmap-table .col-metric {
+    width: 10%; /* Reduzida de 12% para 10% */
+  }
+  .roadmap-table .col-tese {
+    width: 14%; /* Aumentada de 12% para 14% */
+  }
+}
+
+@media (max-width: 768px) {
+  .roadmap-table .col-item {
+    width: 8%;
+  }
+  .roadmap-table .col-metric {
+    width: 8%; /* Reduzida de 10% para 8% */
+  }
+  .roadmap-table .col-tese {
+    width: 12%; /* Aumentada de 10% para 12% */
+  }
+}
+
+@media (max-width: 576px) {
+  .roadmap-table .col-item {
+    width: 6%;
+  }
+  .roadmap-table .col-metric {
+    width: 6%; /* Reduzida de 8% para 6% */
+  }
+  .roadmap-table .col-tese {
+    width: 10%; /* Aumentada de 8% para 10% */
+  }
 }
 
 .roadmap-table .col-actions {
   width: 96px;
+}
+
+/* Garantir que as colunas T tenham prioridade absoluta em telas pequenas */
+@media (max-width: 576px) {
+  .roadmap-table-container {
+    overflow-x: auto;
+    min-width: 100%;
+  }
+  
+  .roadmap-table {
+    min-width: 1200px; /* Força largura mínima para garantir espaço das colunas T */
+  }
+  
+  /* Prioridade máxima para colunas dos meses em mobile */
+  .roadmap-table .col-month {
+    width: 25% !important;
+    min-width: 400px !important;
+  }
 }
 
 /* Ajustar largura da coluna de meses */

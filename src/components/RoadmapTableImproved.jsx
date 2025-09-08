@@ -244,6 +244,30 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     // Se o status for 'concluida', retornar 100% automaticamente
     if (item.status === 'concluida') return 100
     
+    // Se o item possui subitens, calcular progresso baseado nos subitens
+    if (Array.isArray(item.subitens) && item.subitens.length > 0) {
+      const subitens = item.subitens.map(subitem => {
+        // Converter subitem antigo (string) para nova estrutura
+        return typeof subitem === 'string' 
+          ? { texto: subitem, status: 'nao_iniciado' } 
+          : subitem
+      })
+      
+      // Contar subitens por status
+      const statusCounts = subitens.reduce((acc, subitem) => {
+        const status = subitem.status || 'nao_iniciado'
+        acc[status] = (acc[status] || 0) + 1
+        return acc
+      }, {})
+      
+      const totalSubitens = subitens.length
+      const concluidos = statusCounts['concluida'] || 0
+      
+      // Calcular progresso baseado na porcentagem de subitens concluídos
+      return Math.round((concluidos / totalSubitens) * 100)
+    }
+    
+    // Para itens sem subitens, usar cálculo baseado em datas (comportamento atual)
     if (!item.dataInicio || !item.dataFim) return 0
     
     const startDate = new Date(item.dataInicio)
@@ -376,9 +400,6 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
             <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50" disabled={selectedIds.length === 0} onClick={() => onDeleteBulk && onDeleteBulk(selectedIds)}>
               Excluir selecionados ({selectedIds.length})
             </button>
-            <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-red-50 text-red-700" onClick={() => onDeleteBulk && onDeleteBulk(filteredItems.map(i => i.id))}>
-              Excluir todos do trimestre/visão
-            </button>
           </div>
         )}
       </div>
@@ -492,54 +513,70 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                         <div className="mt-2">
                           <div className="text-[10px] text-gray-500 mb-1">Subitens</div>
                           <div className="space-y-1">
-                            {item.subitens.map((subitem, idx) => {
-                              // Converter subitem antigo (string) para nova estrutura
-                              const subitemObj = typeof subitem === 'string' 
-                                ? { texto: subitem, status: 'nao_iniciado' } 
-                                : subitem
-                              
-                              const statusConfig = STATUS_CONFIG[subitemObj.status] || STATUS_CONFIG['nao_iniciado']
-                              
-                              return (
-                                                                  <div key={idx} className={`flex items-center bg-gray-50 px-2 py-1 rounded text-xs border-l-4 gap-2 subitem-${subitemObj.status}`}>
+                            {item.subitens
+                              .map(subitem => {
+                                // Converter subitem antigo (string) para nova estrutura
+                                const subitemObj = typeof subitem === 'string' 
+                                  ? { texto: subitem, status: 'nao_iniciado' } 
+                                  : subitem
+                                return subitemObj
+                              })
+                              .sort((a, b) => {
+                                // Ordenar por prioridade do status (menor número = maior prioridade)
+                                const priorityA = STATUS_CONFIG[a.status]?.priority || 5
+                                const priorityB = STATUS_CONFIG[b.status]?.priority || 5
+                                return priorityA - priorityB
+                              })
+                              .map((subitemObj, idx) => {
+                                const statusConfig = STATUS_CONFIG[subitemObj.status] || STATUS_CONFIG['nao_iniciado']
+                                
+                                return (
+                                  <div key={idx} className={`flex items-center bg-gray-50 px-2 py-1 rounded text-xs border-l-4 gap-2 subitem-${subitemObj.status}`}>
                                     <span className="text-gray-700 flex-1 min-w-0">{subitemObj.texto}</span>
                                     <div className="w-20 h-5 text-xs flex items-center space-x-1 flex-shrink-0">
                                       <span className="text-xs whitespace-nowrap">{statusConfig.label}</span>
                                     </div>
-                                   <Select
-                                     value={subitemObj.status}
-                                     onValueChange={(newStatus) => {
-                                       // Atualizar status do subitem
-                                       const updatedSubitens = [...item.subitens]
-                                       if (typeof updatedSubitens[idx] === 'string') {
-                                         updatedSubitens[idx] = { texto: updatedSubitens[idx], status: newStatus }
-                                       } else {
-                                         updatedSubitens[idx] = { ...updatedSubitens[idx], status: newStatus }
-                                       }
-                                       
-                                       // Chamar função para atualizar o item
-                                       const updatedItem = { ...item, subitens: updatedSubitens }
-                                       onUpdateItemStatus(item.id, item.status, updatedItem)
-                                     }}
-                                   >
-                                    <SelectTrigger className="w-6 h-5 text-xs border-0 bg-transparent hover:bg-gray-100 flex-shrink-0 p-0">
-                                      <div className="flex items-center justify-center">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                       </div>
-                                     </SelectTrigger>
-                                     <SelectContent>
-                                       {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-                                         <SelectItem key={status} value={status}>
-                                             <span>{config.label}</span>
-                                         </SelectItem>
-                                       ))}
-                                     </SelectContent>
-                                   </Select>
-                                 </div>
-                              )
-                            })}
+                                    <Select
+                                      value={subitemObj.status}
+                                      onValueChange={(newStatus) => {
+                                        // Atualizar status do subitem
+                                        const updatedSubitens = [...item.subitens]
+                                        const originalIndex = item.subitens.findIndex((sub, i) => {
+                                          const subObj = typeof sub === 'string' ? { texto: sub, status: 'nao_iniciado' } : sub
+                                          return subObj.texto === subitemObj.texto && subObj.status === subitemObj.status
+                                        })
+                                        
+                                        if (originalIndex !== -1) {
+                                          if (typeof updatedSubitens[originalIndex] === 'string') {
+                                            updatedSubitens[originalIndex] = { texto: updatedSubitens[originalIndex], status: newStatus }
+                                          } else {
+                                            updatedSubitens[originalIndex] = { ...updatedSubitens[originalIndex], status: newStatus }
+                                          }
+                                        }
+                                        
+                                        // Chamar função para atualizar o item
+                                        const updatedItem = { ...item, subitens: updatedSubitens }
+                                        onUpdateItemStatus(item.id, item.status, updatedItem)
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-6 h-5 text-xs border-0 bg-transparent hover:bg-gray-100 flex-shrink-0 p-0">
+                                        <div className="flex items-center justify-center">
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                          </svg>
+                                        </div>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Object.entries(STATUS_CONFIG).map(([status, config]) => (
+                                          <SelectItem key={status} value={status}>
+                                            <span>{config.label}</span>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )
+                              })}
                           </div>
                         </div>
                       )}
@@ -567,6 +604,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                       return { leftPercent: 0 }
                     }
                     
+                    
                     return (
                       <td key={month} className="month-cell">
                         {isActive && (
@@ -592,6 +630,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                           >
                           </div>
                         )}
+                        
                       </td>
                     )
                   })}
@@ -701,19 +740,29 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                  <div>
                   <div className="text-sm text-gray-500 mb-2">Subitens</div>
                   <div className="space-y-2">
-                     {previewItem.subitens.map((si, i) => {
-                       // Converter subitem antigo (string) para nova estrutura
-                       const subitemObj = typeof si === 'string' ? { texto: si, status: 'nao_iniciado' } : si
-                       return (
-                                                <div key={i} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border-l-4 gap-3" style={{ borderLeftColor: getStatusColor(subitemObj.status) }}>
-                          <span className="text-gray-700 flex-1 min-w-0 text-sm">{subitemObj.texto}</span>
-                          <div className="w-24 h-6 flex items-center space-x-2 flex-shrink-0">
-                            <div className={`w-3 h-3 rounded-full ${STATUS_CONFIG[subitemObj.status]?.className.replace('status-', 'bg-')}`}></div>
-                            <span className="text-sm whitespace-nowrap">{STATUS_CONFIG[subitemObj.status]?.label || subitemObj.status}</span>
-                          </div>
-                        </div>
-                       )
-                     })}
+                     {previewItem.subitens
+                       .map(si => {
+                         // Converter subitem antigo (string) para nova estrutura
+                         const subitemObj = typeof si === 'string' ? { texto: si, status: 'nao_iniciado' } : si
+                         return subitemObj
+                       })
+                       .sort((a, b) => {
+                         // Ordenar por prioridade do status (menor número = maior prioridade)
+                         const priorityA = STATUS_CONFIG[a.status]?.priority || 5
+                         const priorityB = STATUS_CONFIG[b.status]?.priority || 5
+                         return priorityA - priorityB
+                       })
+                       .map((subitemObj, i) => {
+                         return (
+                           <div key={i} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border-l-4 gap-3" style={{ borderLeftColor: getStatusColor(subitemObj.status) }}>
+                             <span className="text-gray-700 flex-1 min-w-0 text-sm">{subitemObj.texto}</span>
+                             <div className="w-24 h-6 flex items-center space-x-2 flex-shrink-0">
+                               <div className={`w-3 h-3 rounded-full ${STATUS_CONFIG[subitemObj.status]?.className.replace('status-', 'bg-')}`}></div>
+                               <span className="text-sm whitespace-nowrap">{STATUS_CONFIG[subitemObj.status]?.label || subitemObj.status}</span>
+                             </div>
+                           </div>
+                         )
+                       })}
                    </div>
                  </div>
                )}

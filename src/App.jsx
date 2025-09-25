@@ -89,7 +89,7 @@ function App() {
   // Navegação por setas em modo apresentação e ESC para sair
   useEffect(() => {
     if (!presentationMode) return
-    const products = ['aplicativo','web','parcerias','ai','automacao']
+    const products = ['aplicativo','jornada_profissional','parcerias','hr_experience','ai','automacao']
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
         setPresentationMode(false)
@@ -294,7 +294,7 @@ function App() {
 
   const handleProductChange = (productId) => {
     setCurrentProduct(productId)
-    if (productId === 'web' || productId === 'aplicativo') {
+    if (productId === 'jornada_profissional' || productId === 'aplicativo' || productId === 'hr_experience') {
       setCurrentSubProduct('geral')
     } else {
       setCurrentSubProduct('')
@@ -310,7 +310,7 @@ function App() {
     return roadmapItems.filter(item => {
       const matchesProduct = item.produto === currentProduct
       
-      if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+      if (currentProduct === 'jornada_profissional' || currentProduct === 'aplicativo' || currentProduct === 'hr_experience') {
         // Em 'Geral', mostrar todos os subprodutos e itens sem subProduto
         if (!currentSubProduct || currentSubProduct === 'geral') {
           return matchesProduct
@@ -324,16 +324,26 @@ function App() {
   }
 
   const getPageTitle = () => {
-    let title = currentProduct.charAt(0).toUpperCase() + currentProduct.slice(1)
+    const productLabels = {
+      'aplicativo': 'Jornada do Paciente',
+      'jornada_profissional': 'Jornada do Profissional',
+      'parcerias': 'Jornada do Parceiro',
+      'hr_experience': 'HR Experience',
+      'ai': 'AI',
+      'automacao': 'Automação'
+    }
     
-    if ((currentProduct === 'web' || currentProduct === 'aplicativo') && currentSubProduct && currentSubProduct !== 'geral') {
+    let title = productLabels[currentProduct] || currentProduct.charAt(0).toUpperCase() + currentProduct.slice(1)
+    
+    if ((currentProduct === 'jornada_profissional' || currentProduct === 'aplicativo' || currentProduct === 'hr_experience') && currentSubProduct && currentSubProduct !== 'geral') {
       const subProductLabels = {
         'backoffice': 'Backoffice',
         'portal_estrela': 'Portal Estrela',
         'doctor': 'Doctor',
         'company': 'Company',
         'brasil': 'Brasil',
-        'global': 'Global'
+        'global': 'Global',
+        'nr1': 'NR1'
       }
       title += ` - ${subProductLabels[currentSubProduct] || currentSubProduct}`
     }
@@ -634,10 +644,11 @@ function App() {
             <RequestsPage
               solicitacoes={solicitacoes || []}
               minhasSolicitacoes={myRequests || []}
-              produtos={[ 'aplicativo','web','parcerias','ai','automacao' ]}
+              produtos={[ 'aplicativo','jornada_profissional','parcerias','hr_experience','ai','automacao' ]}
               subProdutos={{
-                web: ['geral','backoffice','portal_estrela','doctor','company'],
-                aplicativo: ['geral','brasil','global']
+                jornada_profissional: ['geral','backoffice','doctor'],
+                aplicativo: ['geral','brasil','global','portal_estrela'],
+                hr_experience: ['geral','company','nr1']
               }}
               solicitacaoVotes={solicitacaoVotes || {}}
               mySolicitacaoVotes={mySolicitacaoVotes || {}}

@@ -22,7 +22,7 @@ const mockRoadmapItems = [
     nome: 'Dashboard Executivo',
     inputOutputMetric: 'Aumento de 30% na velocidade de tomada de decisão',
     teseProduto: 'Painel gerencial com métricas em tempo real',
-    produto: 'web',
+    produto: 'jornada_profissional',
     subProduto: 'backoffice',
     status: 'planejado',
     dataInicio: new Date('2024-03-01'),
@@ -102,7 +102,7 @@ export const useSupabaseData = () => {
     const key = normalizeText(value)
     switch (key) {
       case 'aplicativo':
-      case 'web':
+      case 'jornada_profissional':
       case 'parcerias':
       case 'ai':
       case 'automacao': // cobre "automação" -> "automacao"
@@ -220,6 +220,64 @@ export const useSupabaseData = () => {
     }
   }
 
+  // Função para migrar produtos/subprodutos baseado nas novas regras
+  const migrateProductSubProduct = (item) => {
+    const { produto, subProduto, nome } = item
+    
+    // Debug: mostrar todos os itens sendo processados
+    console.log(`🔍 Processando item "${nome}": produto=${produto}, subProduto=${subProduto}`)
+    
+    // Mapeamento de subprodutos para produtos corretos
+    const subProductToProductMap = {
+      'company': 'hr_experience',
+      'nr1': 'hr_experience',
+      'portal_estrela': 'aplicativo',
+      'brasil': 'aplicativo',
+      'global': 'aplicativo',
+      'backoffice': 'jornada_profissional',
+      'doctor': 'jornada_profissional'
+    }
+    
+    // Se temos um subproduto, determinar o produto correto baseado nele
+    if (subProduto && subProductToProductMap[subProduto]) {
+      const produtoCorreto = subProductToProductMap[subProduto]
+      
+      // Se o produto atual não é o correto, migrar
+      if (produto !== produtoCorreto) {
+        console.log(`🔄 Migrando item "${nome}" de ${produto}/${subProduto} para ${produtoCorreto}/${subProduto}`)
+        return {
+          ...item,
+          produto: produtoCorreto,
+          subProduto: subProduto
+        }
+      }
+    }
+    
+    // Casos específicos de migração baseados no produto atual
+    // Se o subproduto é 'company' e o produto é 'jornada_profissional', migrar para 'hr_experience'
+    if (subProduto === 'company' && produto === 'jornada_profissional') {
+      console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Company para HR Experience/Company`)
+      return {
+        ...item,
+        produto: 'hr_experience',
+        subProduto: 'company'
+      }
+    }
+    
+    // Se o subproduto é 'portal_estrela' e o produto é 'jornada_profissional', migrar para 'aplicativo'
+    if (subProduto === 'portal_estrela' && produto === 'jornada_profissional') {
+      console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Portal Estrela para Jornada do Paciente/Portal Estrela`)
+      return {
+        ...item,
+        produto: 'aplicativo',
+        subProduto: 'portal_estrela'
+      }
+    }
+    
+    // Retornar item sem alterações se não precisar de migração
+    return item
+  }
+
   const mapAppToDb = (appItem) => {
     console.log('🔍 mapAppToDb - appItem recebido:', appItem)
     console.log('🔍 mapAppToDb - dataFim:', appItem.dataFim, 'tipo:', typeof appItem.dataFim)
@@ -261,7 +319,7 @@ export const useSupabaseData = () => {
     }
 
     const produtoNormalizado = normalizeProduct(appItem.produto || 'aplicativo')
-    const subProdutoNormalizado = (produtoNormalizado === 'web' || produtoNormalizado === 'aplicativo')
+    const subProdutoNormalizado = (produtoNormalizado === 'jornada_profissional' || produtoNormalizado === 'aplicativo')
       ? normalizeSubProduct(appItem.subProduto || '')
       : null
 
@@ -331,7 +389,7 @@ export const useSupabaseData = () => {
           setRoadmapItems(JSON.parse(savedItems))
         }
       } else {
-        const mapped = (roadmapData || []).map(mapDbToApp)
+        const mapped = (roadmapData || []).map(mapDbToApp).map(migrateProductSubProduct)
         setRoadmapItems(mapped)
       }
 
@@ -526,7 +584,7 @@ export const useSupabaseData = () => {
         email_solicitante: payload.emailSolicitante || '',
         departamento: payload.departamento || '',
         produto: normalizeProduct(payload.produto || 'aplicativo'),
-        sub_produto: (payload.produto === 'web' || payload.produto === 'aplicativo') ? normalizeSubProduct(payload.subProduto || '') : null,
+        sub_produto: (payload.produto === 'jornada_profissional' || payload.produto === 'aplicativo') ? normalizeSubProduct(payload.subProduto || '') : null,
         titulo: payload.titulo || '',
         descricao: payload.descricao || '',
         retorno_esperado: payload.retornoEsperado || '',
@@ -600,7 +658,7 @@ export const useSupabaseData = () => {
           )
           localStorage.setItem('roadmapItems', JSON.stringify(roadmapItems))
         } else {
-          const updated = mapDbToApp(data[0])
+          const updated = migrateProductSubProduct(mapDbToApp(data[0]))
           setRoadmapItems(items => items.map(item => item.id === itemData.id ? updated : item))
         }
       } else {
@@ -621,7 +679,7 @@ export const useSupabaseData = () => {
           setRoadmapItems(items => [...items, fallbackItem])
           localStorage.setItem('roadmapItems', JSON.stringify([...roadmapItems, fallbackItem]))
         } else {
-          const created = mapDbToApp(data[0])
+          const created = migrateProductSubProduct(mapDbToApp(data[0]))
           setRoadmapItems(items => [...items, created])
         }
       }

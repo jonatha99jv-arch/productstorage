@@ -17,23 +17,28 @@ const STATUS_OPTIONS = [
 ]
 
 const PRODUCT_OPTIONS = [
-  { value: 'aplicativo', label: 'Aplicativo' },
-  { value: 'web', label: 'Web' },
-  { value: 'parcerias', label: 'Parcerias' },
+  { value: 'aplicativo', label: 'Jornada do Paciente' },
+  { value: 'jornada_profissional', label: 'Jornada do Profissional' },
+  { value: 'parcerias', label: 'Jornada do Parceiro' },
+  { value: 'hr_experience', label: 'HR Experience' },
   { value: 'ai', label: 'AI' },
   { value: 'automacao', label: 'Automação' }
 ]
 
 const WEB_SUB_PRODUCTS = [
   { value: 'backoffice', label: 'Backoffice' },
-  { value: 'portal_estrela', label: 'Portal Estrela' },
-  { value: 'doctor', label: 'Doctor' },
-  { value: 'company', label: 'Company' }
+  { value: 'doctor', label: 'Doctor' }
 ]
 
 const APP_SUB_PRODUCTS = [
   { value: 'brasil', label: 'Brasil' },
-  { value: 'global', label: 'Global' }
+  { value: 'global', label: 'Global' },
+  { value: 'portal_estrela', label: 'Portal Estrela' }
+]
+
+const HR_EXPERIENCE_SUB_PRODUCTS = [
+  { value: 'company', label: 'Company' },
+  { value: 'nr1', label: 'NR1' }
 ]
 
 const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
@@ -57,10 +62,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [errors, setErrors] = useState({})
 
   // Refs para focar/rolar até o primeiro campo inválido
-  const nomeRef = useRef(null)
-  const produtoRef = useRef(null)
-  const metricRef = useRef(null)
-  const teseRef = useRef(null)
   const dataInicioBtnRef = useRef(null)
   const dataFimBtnRef = useRef(null)
 
@@ -203,7 +204,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="nome">Novo Item *</Label>
             <Input
               id="nome"
-              ref={nomeRef}
               value={formData.nome}
               onChange={(e) => handleInputChange('nome', e.target.value)}
               placeholder="Ex: Novo Aplicativo Global"
@@ -219,11 +219,10 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <div className="relative">
               <select
                 id="produto"
-                ref={produtoRef}
                 value={formData.produto}
                 onChange={(e) => {
                   handleInputChange('produto', e.target.value)
-                  if (e.target.value === 'web' || e.target.value === 'aplicativo') {
+                  if (e.target.value === 'jornada_profissional' || e.target.value === 'aplicativo' || e.target.value === 'hr_experience') {
                     handleInputChange('subProduto', '')
                   } else {
                     handleInputChange('subProduto', '')
@@ -242,8 +241,8 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             </div>
           </div>
 
-          {/* Sub-produto (Web e Aplicativo) */}
-          {(formData.produto === 'web' || formData.produto === 'aplicativo') && (
+          {/* Sub-produto (Web, Aplicativo e HR Experience) */}
+          {(formData.produto === 'jornada_profissional' || formData.produto === 'aplicativo' || formData.produto === 'hr_experience') && (
             <div>
               <Label htmlFor="subProduto">Sub-produto</Label>
               <div className="relative">
@@ -254,7 +253,9 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
                   className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
                 >
                   <option value="">Geral</option>
-                  {(formData.produto === 'web' ? WEB_SUB_PRODUCTS : APP_SUB_PRODUCTS).map(option => (
+                  {(formData.produto === 'jornada_profissional' ? WEB_SUB_PRODUCTS : 
+                    formData.produto === 'aplicativo' ? APP_SUB_PRODUCTS : 
+                    formData.produto === 'hr_experience' ? HR_EXPERIENCE_SUB_PRODUCTS : []).map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -270,7 +271,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="metric">Métrica Input/Output *</Label>
             <Textarea
               id="metric"
-              ref={metricRef}
               value={formData.inputOutputMetric}
               onChange={(e) => handleInputChange('inputOutputMetric', e.target.value)}
               placeholder="Ex: Aumentar em 10% a taxa de NPS em 3 meses"
@@ -285,7 +285,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="tese">Tese de Produto *</Label>
             <Textarea
               id="tese"
-              ref={teseRef}
               value={formData.teseProduto}
               onChange={(e) => handleInputChange('teseProduto', e.target.value)}
               placeholder="Ex: Acreditamos que o novo app global melhora a experiência..."

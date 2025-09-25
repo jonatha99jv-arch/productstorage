@@ -47,6 +47,7 @@ const SUBPRODUCT_LABELS = {
   'company': 'Company',
   'brasil': 'Brasil',
   'global': 'Global',
+  'nr1': 'NR1',
   'geral': 'Geral',
 }
 
@@ -57,6 +58,7 @@ const SUBPRODUCT_COLORS = {
   'company': 'bg-purple-600',
   'brasil': 'bg-green-600',
   'global': 'bg-blue-600',
+  'nr1': 'bg-orange-600',
   'geral': 'bg-gray-600',
 }
 
@@ -191,7 +193,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
 
       const matchesProduct = !currentProduct || item.produto === currentProduct
       const matchesSubProduct = (() => {
-        if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+        if (currentProduct === 'jornada_profissional' || currentProduct === 'aplicativo') {
           // Em Geral (ou sem seleção), mostrar todos os subprodutos e também itens sem subProduto
           if (!currentSubProduct || currentSubProduct === 'geral') return true
           return item.subProduto === currentSubProduct

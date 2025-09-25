@@ -26,6 +26,7 @@ const subProductMap = {
   'company': 'company',
   'brasil': 'brasil',
   'global': 'global',
+  'nr1': 'nr1',
 }
 
 const normalizeText = (value) => {
@@ -38,8 +39,63 @@ const normalizeText = (value) => {
 
 const normalizeProduct = (value) => {
   const key = normalizeText(value)
-  if (['aplicativo','web','parcerias','ai','automacao'].includes(key)) return key
+  if (['aplicativo','jornada_profissional','parcerias','hr_experience','ai','automacao'].includes(key)) return key
   return 'aplicativo'
+}
+
+// Função para migrar produtos/subprodutos baseado nas novas regras
+const migrateProductSubProduct = (item) => {
+  const { produto, subProduto, nome } = item
+  
+  // Mapeamento de subprodutos para produtos corretos
+  const subProductToProductMap = {
+    'company': 'hr_experience',
+    'nr1': 'hr_experience',
+    'portal_estrela': 'aplicativo',
+    'brasil': 'aplicativo',
+    'global': 'aplicativo',
+    'backoffice': 'jornada_profissional',
+    'doctor': 'jornada_profissional'
+  }
+  
+  // Se temos um subproduto, determinar o produto correto baseado nele
+  if (subProduto && subProductToProductMap[subProduto]) {
+    const produtoCorreto = subProductToProductMap[subProduto]
+    
+    // Se o produto atual não é o correto, migrar
+    if (produto !== produtoCorreto) {
+      console.log(`🔄 Migrando item "${nome}" de ${produto}/${subProduto} para ${produtoCorreto}/${subProduto}`)
+      return {
+        ...item,
+        produto: produtoCorreto,
+        subProduto: subProduto
+      }
+    }
+  }
+  
+  // Casos específicos de migração baseados no produto atual
+  // Se o subproduto é 'company' e o produto é 'jornada_profissional', migrar para 'hr_experience'
+  if (subProduto === 'company' && produto === 'jornada_profissional') {
+    console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Company para HR Experience/Company`)
+    return {
+      ...item,
+      produto: 'hr_experience',
+      subProduto: 'company'
+    }
+  }
+  
+  // Se o subproduto é 'portal_estrela' e o produto é 'jornada_profissional', migrar para 'aplicativo'
+  if (subProduto === 'portal_estrela' && produto === 'jornada_profissional') {
+    console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Portal Estrela para Jornada do Paciente/Portal Estrela`)
+    return {
+      ...item,
+      produto: 'aplicativo',
+      subProduto: 'portal_estrela'
+    }
+  }
+  
+  // Retornar item sem alterações se não precisar de migração
+  return item
 }
 
 const statusMap = {
@@ -109,7 +165,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
         const subitensCell = idx['Subitens'] != null ? row[idx['Subitens']] : ''
         let subProduto = ''
-        if (produto === 'web' || produto === 'aplicativo') {
+        if (produto === 'jornada_profissional' || produto === 'aplicativo' || produto === 'hr_experience') {
           const key = normalizeText(subProdCell || 'geral')
           subProduto = subProductMap[key] || ''
         }
@@ -148,7 +204,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           continue
         }
 
-        const payload = {
+        const payload = migrateProductSubProduct({
           nome: item,
           inputOutputMetric: metric,
           teseProduto: tese,
@@ -160,7 +216,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           produto,
           subProduto,
           subitens
-        }
+        })
 
         try {
           // Preferir upsert se fornecido para evitar duplicações

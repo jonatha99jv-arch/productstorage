@@ -15,7 +15,7 @@ const REQUIRED_HEADERS = [
 ]
 
 // Cabeçalhos opcionais
-const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição', 'Subitens'] // 'Descrição' e 'Subitens' são opcionais
+const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição', 'Subitens', 'Ano'] // 'Descrição', 'Subitens' e 'Ano' são opcionais
 
 const subProductMap = {
   'geral': 'geral',
@@ -164,6 +164,12 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const produto = normalizeProduct(row[idx['Produto']])
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
         const subitensCell = idx['Subitens'] != null ? row[idx['Subitens']] : ''
+        const anoCell = idx['Ano'] != null ? row[idx['Ano']] : ''
+        const anoRef = (() => {
+          const parsed = Number(anoCell)
+          if (Number.isInteger(parsed) && parsed >= 2000 && parsed <= 2100) return parsed
+          return null
+        })()
         let subProduto = ''
         if (produto === 'jornada_profissional' || produto === 'aplicativo' || produto === 'hr_experience') {
           const key = normalizeText(subProdCell || 'geral')
@@ -185,6 +191,17 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
 
         // Processar data final - priorizar "Data Final", mas manter compatibilidade com "Duração"
         let dataFim = dataFinal
+        const applyYear = (d) => {
+          if (!d || !anoRef) return d
+          const clone = new Date(d)
+          if (Number.isNaN(clone.getTime())) return d
+          clone.setFullYear(anoRef)
+          return clone
+        }
+        const applyYearStart = applyYear(dataInicio)
+        const applyYearEnd = applyYear(dataFim)
+        dataInicio = applyYearStart
+        dataFim = applyYearEnd
         
         // Se não tiver "Data Final", tentar calcular a partir de "Duração" (para compatibilidade)
         if (!dataFim && duracao && dataInicio) {
@@ -260,6 +277,8 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
             <br />
             <span className="text-xs text-gray-500">
               Nota: Se não tiver "Data Final", pode usar "Duração" (em meses) que será convertida automaticamente
+              <br />
+              Coluna "Ano" (opcional): se preenchido, força o ano de início/fim (útil para planilhas sem ano).
               <br />
               Coluna "Subitens" (opcional): Use ponto e vírgula (;) para separar múltiplos subitens. Ex: "Subitem 1; Subitem 2; Subitem 3"
             </span>

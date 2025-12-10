@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -45,8 +45,16 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
     }
     return colorMap[status] || 'bg-gray-500'
   }
-  const [selectedQuarter, setSelectedQuarter] = useState('Q1')
+  const getDefaultQuarter = () => {
+    const m = new Date().getMonth() + 1
+    if (m <= 3) return 'Q1'
+    if (m <= 6) return 'Q2'
+    if (m <= 9) return 'Q3'
+    return 'Q4'
+  }
+  const [selectedQuarter, setSelectedQuarter] = useState(getDefaultQuarter())
   const [searchTerm, setSearchTerm] = useState('')
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
 
   // Filtrar itens baseado na busca
   const filteredItems = items.filter(item =>
@@ -86,6 +94,31 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
     const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
     setSelectedQuarter(next)
   }
+
+  // Persistir seleção de trimestre (mantém após a primeira carga)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('roadmapTableFilters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.quarter) setSelectedQuarter(parsed.quarter)
+      }
+      setFiltersLoaded(true)
+    } catch (e) {
+      console.warn('Não foi possível carregar filtros salvos da tabela simples', e)
+      setFiltersLoaded(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!filtersLoaded) return
+    try {
+      localStorage.setItem('roadmapTableFilters', JSON.stringify({ quarter: selectedQuarter }))
+    } catch (e) {
+      // ignore
+    }
+  }, [filtersLoaded, selectedQuarter])
 
   return (
     <div className="space-y-6">

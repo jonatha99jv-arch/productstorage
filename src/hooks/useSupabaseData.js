@@ -104,6 +104,7 @@ export const useSupabaseData = () => {
       case 'aplicativo':
       case 'jornada_profissional':
       case 'parcerias':
+      case 'hr_experience':
       case 'ai':
       case 'automacao': // cobre "automação" -> "automacao"
         return key
@@ -122,6 +123,7 @@ export const useSupabaseData = () => {
     if (key === 'brasil') return 'brasil'
     if (key === 'global') return 'global'
     if (key === 'geral') return 'geral'
+    if (key === 'nr1') return 'nr1'
     return ''
   }
 
@@ -319,7 +321,7 @@ export const useSupabaseData = () => {
     }
 
     const produtoNormalizado = normalizeProduct(appItem.produto || 'aplicativo')
-    const subProdutoNormalizado = (produtoNormalizado === 'jornada_profissional' || produtoNormalizado === 'aplicativo')
+    const subProdutoNormalizado = (produtoNormalizado === 'jornada_profissional' || produtoNormalizado === 'aplicativo' || produtoNormalizado === 'hr_experience')
       ? normalizeSubProduct(appItem.subProduto || '')
       : null
 
@@ -584,7 +586,7 @@ export const useSupabaseData = () => {
         email_solicitante: payload.emailSolicitante || '',
         departamento: payload.departamento || '',
         produto: normalizeProduct(payload.produto || 'aplicativo'),
-        sub_produto: (payload.produto === 'jornada_profissional' || payload.produto === 'aplicativo') ? normalizeSubProduct(payload.subProduto || '') : null,
+        sub_produto: (payload.produto === 'jornada_profissional' || payload.produto === 'aplicativo' || payload.produto === 'hr_experience') ? normalizeSubProduct(payload.subProduto || '') : null,
         titulo: payload.titulo || '',
         descricao: payload.descricao || '',
         retorno_esperado: payload.retornoEsperado || '',

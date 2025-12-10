@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -77,83 +77,91 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return 'Q4'
   }
   const [selectedQuarter, setSelectedQuarter] = useState(getDefaultQuarter())
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
   const [selectedIds, setSelectedIds] = useState([])
   const [previewItem, setPreviewItem] = useState(null)
   const [expandedItems, setExpandedItems] = useState({})
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
 
   const toggleExpanded = (id) => {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Função para verificar se um item está ativo em um determinado mês/ano
+  // Persistir filtros para manter valor após primeira carga
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('roadmapFilters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.quarter) setSelectedQuarter(parsed.quarter)
+        if (parsed.year) setSelectedYear(parsed.year)
+        if (parsed.statusFilter) setStatusFilter(parsed.statusFilter)
+      }
+      setFiltersLoaded(true)
+    } catch (e) {
+      console.warn('Não foi possível carregar filtros salvos', e)
+      setFiltersLoaded(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!filtersLoaded) return
+    try {
+      const payload = {
+        quarter: selectedQuarter,
+        year: selectedYear,
+        statusFilter
+      }
+      localStorage.setItem('roadmapFilters', JSON.stringify(payload))
+    } catch (e) {
+      // ignora erros de storage
+    }
+  }, [filtersLoaded, selectedQuarter, selectedYear, statusFilter])
+
+  // Verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
     if (!item.dataInicio || !item.dataFim) return false
-
     const startDate = new Date(item.dataInicio)
     const endDate = new Date(item.dataFim)
-    
-    // Usar o ano das datas do item, não o ano atual
-    const itemYear = startDate.getFullYear()
-    
-    // normalizar data de início para primeiro dia do mês de início
-    const startMonthDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
-    // normalizar data final para último dia do mês de fim
-    const endMonthDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0)
 
-    const checkMonthStartDate = new Date(year, month - 1, 1)
-    const checkMonthEndDate = new Date(year, month, 0)
+    // normalizar para mês/ano de verificação
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 0)
 
-    return startMonthDate <= checkMonthEndDate && endMonthDate >= checkMonthStartDate
+    return startDate <= monthEnd && endDate >= monthStart
   }
 
-  // Função para calcular a proporção de preenchimento de um mês
+  // Calcular proporção de preenchimento de um mês específico em um ano específico
   const getMonthFillProportion = (item, month, year) => {
     if (!item.dataInicio || !item.dataFim) return 0
-
     const startDate = new Date(item.dataInicio)
     const endDate = new Date(item.dataFim)
-    
-    // Usar o ano das datas do item
-    const itemYear = startDate.getFullYear()
-    
-    const monthStart = new Date(itemYear, month - 1, 1)
-    const monthEnd = new Date(itemYear, month, 0)
-    
-    // Se o item não está ativo neste mês, retorna 0
+
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 0)
+
     if (startDate > monthEnd || endDate < monthStart) return 0
-    
-    // Calcular quantos dias do mês o item está ativo
+
     const effectiveStart = startDate > monthStart ? startDate : monthStart
     const effectiveEnd = endDate < monthEnd ? endDate : monthEnd
-    
-    // Calcular diferença em dias
+
     const timeDiff = effectiveEnd.getTime() - effectiveStart.getTime()
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1
-    
+
     const daysInMonth = monthEnd.getDate()
     const activeDays = Math.max(0, daysDiff)
-    
+
     return activeDays / daysInMonth
   }
 
-  // Verificar se o item tem qualquer sobreposição com os meses do trimestre, considerando mudanças de ano
-  const shouldShowItemInQuarter = (item, quarter) => {
+  // Verificar se o item tem sobreposição com o trimestre/ano selecionado
+  const shouldShowItemInQuarter = (item, quarter, year) => {
     if (!item.dataInicio || !item.dataFim) return true
     const quarterMonths = QUARTERS[quarter].monthNumbers
-    const start = new Date(item.dataInicio)
-    const end = new Date(item.dataFim)
-    // Normalizar para o primeiro/último dia dos meses
-    let cursor = new Date(start.getFullYear(), start.getMonth(), 1)
-    const endMonthEdge = new Date(end.getFullYear(), end.getMonth(), 1)
-    while (cursor <= endMonthEdge) {
-      const monthNum = cursor.getMonth() + 1
-      if (quarterMonths.includes(monthNum)) return true
-      // avançar 1 mês
-      cursor.setMonth(cursor.getMonth() + 1)
-    }
-    return false
+    return quarterMonths.some(month => isItemActiveInMonth(item, month, year))
   }
 
   // Função de ordenação por prioridade de status, data de início e data de finalização
@@ -209,7 +217,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       )
 
       // Sempre respeitar o trimestre selecionado
-      const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter)
+      const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter, selectedYear)
 
       return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter && matchesStatus
     })
@@ -337,7 +345,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   }
 
   const currentQuarter = QUARTERS[selectedQuarter]
-  const currentYear = new Date().getFullYear()
+  const currentYear = selectedYear
   const filteredItems = getFilteredAndSortedItems()
 
   const quarterKeys = Object.keys(QUARTERS)
@@ -350,6 +358,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     const idx = quarterKeys.indexOf(selectedQuarter)
     const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
     setSelectedQuarter(next)
+  }
+
+  const getYearOptions = () => {
+    const years = new Set()
+    years.add(new Date().getFullYear())
+    items.forEach(item => {
+      if (item?.dataInicio) years.add(new Date(item.dataInicio).getFullYear())
+      if (item?.dataFim) years.add(new Date(item.dataFim).getFullYear())
+    })
+    const arr = Array.from(years)
+    return arr.sort((a, b) => a - b)
   }
 
   return (
@@ -367,6 +386,21 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 {Object.entries(QUARTERS).map(([key, quarter]) => (
                   <SelectItem key={key} value={key}>
                     {quarter.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-company-dark-blue">Ano:</label>
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {getYearOptions().map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -430,7 +464,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
               <th rowSpan="2" className="merged-header item-cell item-name-cell">Item</th>
               <th colSpan="3" className="merged-header quarter-header">
                 <button type="button" className="quarter-arrow left" aria-label="Trimestre anterior" onClick={goPrevQuarter} />
-                {currentQuarter.label}
+                {currentQuarter.label} {currentYear}
                 <button type="button" className="quarter-arrow right" aria-label="Próximo trimestre" onClick={goNextQuarter} />
               </th>
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
@@ -588,18 +622,16 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   {/* Colunas dos meses com marcação de período */}
                   {currentQuarter.months.map((month, index) => {
                     const monthNumber = currentQuarter.monthNumbers[index]
-                    // Usar o ano das datas do item, não o ano atual
-                    const itemYear = item.dataInicio ? new Date(item.dataInicio).getFullYear() : new Date().getFullYear()
-                    const isActive = isItemActiveInMonth(item, monthNumber, itemYear)
-                    const fillProportion = getMonthFillProportion(item, monthNumber, itemYear)
+                    const isActive = isItemActiveInMonth(item, monthNumber, selectedYear)
+                    const fillProportion = getMonthFillProportion(item, monthNumber, selectedYear)
                     
                     // Calcular posição da barra baseada na data de início
                     const computePlacement = () => {
                       if (!item.dataInicio) return { leftPercent: 0 }
                       const startDate = new Date(item.dataInicio)
-                      if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === itemYear) {
+                      if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === selectedYear) {
                         const dayOfMonth = startDate.getDate()
-                        const daysInMonth = new Date(itemYear, monthNumber, 0).getDate()
+                        const daysInMonth = new Date(selectedYear, monthNumber, 0).getDate()
                         const startPosition = (dayOfMonth - 1) / daysInMonth
                         return { leftPercent: Math.max(0, Math.min(100, startPosition * 100)) }
                       }

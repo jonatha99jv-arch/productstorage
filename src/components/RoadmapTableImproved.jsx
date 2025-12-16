@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Edit, Trash2, Search, Calendar, Copy, GripVertical } from 'lucide-react'
+import { Edit, Trash2, Search, Calendar, Copy, GripVertical, ArrowLeftRight, FileText, Trophy } from 'lucide-react'
 
 const QUARTERS = {
   'Q1': { label: 'T1', months: ['Jan', 'Fev', 'Mar'], monthNumbers: [1, 2, 3] },
@@ -90,6 +90,22 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   const [draggedItem, setDraggedItem] = useState(null)
   const [dragOverItemId, setDragOverItemId] = useState(null)
   const dragCounter = useRef(0)
+  
+  // Estado para toggle Tese/Resultado - armazena IDs dos itens que estão mostrando resultado
+  const [showingResultado, setShowingResultado] = useState(new Set())
+  
+  // Função para alternar entre Tese e Resultado
+  const toggleTeseResultado = (itemId) => {
+    setShowingResultado(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId)
+      } else {
+        newSet.add(itemId)
+      }
+      return newSet
+    })
+  }
 
   const toggleExpanded = (id) => {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }))
@@ -574,7 +590,15 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
               </th>
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
               <th rowSpan="2" className="merged-header item-cell metric-cell">Input/Output Metric</th>
-              <th rowSpan="2" className="merged-header item-cell tese-cell">Tese de Produto</th>
+              <th rowSpan="2" className="merged-header item-cell tese-cell">
+                <div className="flex items-center justify-center gap-1">
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Tese</span>
+                  <ArrowLeftRight className="h-3 w-3 text-gray-400" />
+                  <Trophy className="h-3.5 w-3.5" />
+                  <span>Resultado</span>
+                </div>
+              </th>
               {canEdit && (
                 <th rowSpan="2" className="merged-header w-24">Ações</th>
               )}
@@ -808,8 +832,51 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   </td>
                   
                   <td className="item-cell">
-                    <div className="text-sm text-gray-700">
-                      {item.teseProduto}
+                    <div className="text-sm text-gray-700 relative">
+                      {/* Toggle header */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                          {showingResultado.has(item.id) ? (
+                            <>
+                              <Trophy className="h-3 w-3 text-green-600" />
+                              Resultado
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="h-3 w-3 text-blue-600" />
+                              Tese
+                            </>
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleTeseResultado(item.id)}
+                          className="p-1 rounded hover:bg-gray-100 transition-colors group"
+                          title={showingResultado.has(item.id) ? 'Ver Tese de Produto' : 'Ver Resultado Obtido'}
+                        >
+                          <ArrowLeftRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-company-orange transition-colors" />
+                        </button>
+                      </div>
+                      
+                      {/* Conteúdo */}
+                      <div className="min-h-[2rem]">
+                        {showingResultado.has(item.id) ? (
+                          item.resultadoObtido ? (
+                            <span className="text-green-700">{item.resultadoObtido}</span>
+                          ) : (
+                            <span className="text-gray-400 italic text-xs">Nenhum resultado cadastrado</span>
+                          )
+                        ) : (
+                          item.teseProduto || <span className="text-gray-400 italic text-xs">-</span>
+                        )}
+                      </div>
+                      
+                      {/* Indicador de resultado cadastrado (quando mostrando tese) */}
+                      {!showingResultado.has(item.id) && item.resultadoObtido && (
+                        <div className="absolute -top-1 -right-1">
+                          <span className="inline-flex items-center justify-center w-2 h-2 bg-green-500 rounded-full" title="Resultado cadastrado" />
+                        </div>
+                      )}
                     </div>
                   </td>
                   
@@ -947,8 +1014,21 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.inputOutputMetric || '-'}</div>
               </div>
               <div>
-                <div className="text-xs text-gray-500 mb-1">Tese de Produto</div>
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Tese de Produto
+                </div>
                 <div className="text-sm bg-gray-50 border rounded p-3 whitespace-pre-wrap">{previewItem.teseProduto || '-'}</div>
+              </div>
+              
+              <div>
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <Trophy className="h-3 w-3 text-green-600" />
+                  Resultado Obtido
+                </div>
+                <div className={`text-sm border rounded p-3 whitespace-pre-wrap ${previewItem.resultadoObtido ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50'}`}>
+                  {previewItem.resultadoObtido || <span className="text-gray-400 italic">Nenhum resultado cadastrado</span>}
+                </div>
               </div>
               </div>
             </div>

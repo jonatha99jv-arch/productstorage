@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Plus, X, ChevronDown } from 'lucide-react'
+import { CalendarIcon, Plus, X, ChevronDown, Trophy, FileText } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const STATUS_OPTIONS = [
@@ -48,6 +48,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
     subitens: [{ texto: '', status: 'nao_iniciado' }],
     inputOutputMetric: '',
     teseProduto: '',
+    resultadoObtido: '',
     descricao: '',
     dataFim: null,
     dataInicio: null,
@@ -83,6 +84,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
         subitens: subitensFormatados,
         inputOutputMetric: item.inputOutputMetric || '',
         teseProduto: item.teseProduto || '',
+        resultadoObtido: item.resultadoObtido || '',
         descricao: item.descricao || '',
         dataFim: item.dataFim ? new Date(item.dataFim) : null,
         dataInicio: item.dataInicio ? new Date(item.dataInicio) : null,
@@ -282,7 +284,10 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
           {/* Tese de Produto */}
           <div className="space-y-1.5">
-            <Label htmlFor="tese">Tese de Produto *</Label>
+            <Label htmlFor="tese" className="flex items-center gap-1.5">
+              <FileText className="h-4 w-4 text-blue-600" />
+              Tese de Produto *
+            </Label>
             <Textarea
               id="tese"
               value={formData.teseProduto}
@@ -292,6 +297,24 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
               className={errors.teseProduto ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
             {errors.teseProduto && (<p className="text-red-600 text-sm mt-1">{errors.teseProduto}</p>)}
+          </div>
+
+          {/* Resultado Obtido */}
+          <div className="space-y-1.5">
+            <Label htmlFor="resultadoObtido" className="flex items-center gap-1.5">
+              <Trophy className="h-4 w-4 text-green-600" />
+              Resultado Obtido
+            </Label>
+            <Textarea
+              id="resultadoObtido"
+              value={formData.resultadoObtido}
+              onChange={(e) => handleInputChange('resultadoObtido', e.target.value)}
+              placeholder="Ex: Aumentamos em 15% a taxa de NPS após implementação..."
+              className="border-green-200 focus-visible:ring-green-500"
+            />
+            <p className="text-xs text-gray-500">
+              Registre aqui os resultados alcançados após a conclusão do item
+            </p>
           </div>
 
           {/* Descrição (opcional) */}

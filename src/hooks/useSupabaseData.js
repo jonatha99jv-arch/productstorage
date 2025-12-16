@@ -132,21 +132,25 @@ export const useSupabaseData = () => {
     let inputOutputMetric = ''
     let teseProduto = ''
     let descricao = ''
+    let resultadoObtido = ''
     try {
       if (dbItem.descricao && typeof dbItem.descricao === 'string' && dbItem.descricao.trim().startsWith('{')) {
         const extra = JSON.parse(dbItem.descricao)
         inputOutputMetric = extra.inputOutputMetric || ''
         teseProduto = extra.teseProduto || ''
         descricao = extra.descricao || ''
+        resultadoObtido = extra.resultadoObtido || ''
       } else if (dbItem.descricao) {
         // Compatibilidade antiga: descricao do banco era usada como teseProduto
         teseProduto = dbItem.descricao
         descricao = ''
+        resultadoObtido = ''
       }
     } catch (_) {
       // Ignorar parse errors e manter descricao antiga como teseProduto
       teseProduto = dbItem.descricao || ''
       descricao = ''
+      resultadoObtido = ''
     }
 
     // Reconstituir subitens e dataFim a partir de tags
@@ -212,6 +216,7 @@ export const useSupabaseData = () => {
       inputOutputMetric,
       teseProduto,
       descricao,
+      resultadoObtido,
       produto: normalizeProduct(dbItem.produto || 'aplicativo'),
       subProduto: normalizeSubProduct(dbItem.sub_produto || ''),
       status: dbItem.status || 'nao_iniciado',
@@ -288,7 +293,8 @@ export const useSupabaseData = () => {
     const descricao = JSON.stringify({
       inputOutputMetric: appItem.inputOutputMetric || '',
       teseProduto: appItem.teseProduto || '',
-      descricao: appItem.descricao || ''
+      descricao: appItem.descricao || '',
+      resultadoObtido: appItem.resultadoObtido || ''
     })
 
     const tags = []

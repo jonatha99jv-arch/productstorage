@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -35,8 +35,26 @@ const STATUS_CONFIG = {
 }
 
 const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus }) => {
-  const [selectedQuarter, setSelectedQuarter] = useState('Q1')
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'nao_iniciado': 'bg-red-500',
+      'proxima_sprint': 'bg-orange-500',
+      'sprint_atual': 'bg-yellow-500',
+      'em_finalizacao': 'bg-green-500',
+      'concluida': 'bg-green-600'
+    }
+    return colorMap[status] || 'bg-gray-500'
+  }
+  const getDefaultQuarter = () => {
+    const m = new Date().getMonth() + 1
+    if (m <= 3) return 'Q1'
+    if (m <= 6) return 'Q2'
+    if (m <= 9) return 'Q3'
+    return 'Q4'
+  }
+  const [selectedQuarter, setSelectedQuarter] = useState(getDefaultQuarter())
   const [searchTerm, setSearchTerm] = useState('')
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
 
   // Filtrar itens baseado na busca
   const filteredItems = items.filter(item =>
@@ -76,6 +94,31 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
     const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
     setSelectedQuarter(next)
   }
+
+  // Persistir seleção de trimestre (mantém após a primeira carga)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('roadmapTableFilters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.quarter) setSelectedQuarter(parsed.quarter)
+      }
+      setFiltersLoaded(true)
+    } catch (e) {
+      console.warn('Não foi possível carregar filtros salvos da tabela simples', e)
+      setFiltersLoaded(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!filtersLoaded) return
+    try {
+      localStorage.setItem('roadmapTableFilters', JSON.stringify({ quarter: selectedQuarter }))
+    } catch (e) {
+      // ignore
+    }
+  }, [filtersLoaded, selectedQuarter])
 
   return (
     <div className="space-y-6">
@@ -169,9 +212,16 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
                         <div className="text-sm text-gray-600">
                           <div className="font-medium">Subitens:</div>
                           <ul className="list-disc list-inside space-y-1">
-                            {item.subitens.map((subitem, index) => (
-                              <li key={index} className="text-xs">{subitem}</li>
-                            ))}
+                            {item.subitens.map((subitem, index) => {
+                              // Converter subitem antigo (string) para nova estrutura
+                              const subitemObj = typeof subitem === 'string' ? { texto: subitem, status: 'nao_iniciado' } : subitem
+                              return (
+                                                                                                 <li key={index} className="text-xs flex items-start justify-between gap-2">
+                                  <span className="flex-1 min-w-0">{subitemObj.texto}</span>
+                                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(subitemObj.status)}`}></span>
+                                </li>
+                              )
+                            })}
                           </ul>
                         </div>
                       )}

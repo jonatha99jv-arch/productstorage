@@ -1,4 +1,253 @@
+
 /* Tailwind v3 compatible: removed Tailwind v4-only imports and theme directives */
+
+/* Modo Apresentação - Aumentar tamanho das letras */
+.presentation-mode {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Ajustes gerais de espaçamento no modo apresentação */
+.presentation-mode * {
+  letter-spacing: 0.025em;
+}
+
+.presentation-mode h1,
+.presentation-mode h2,
+.presentation-mode h3,
+.presentation-mode h4,
+.presentation-mode h5,
+.presentation-mode h6 {
+  font-size: 1.4em;
+  line-height: 1.4;
+}
+
+.presentation-mode .text-sm {
+  font-size: 1.1rem !important;
+}
+
+.presentation-mode .text-xs {
+  font-size: 1rem !important;
+}
+
+.presentation-mode .text-lg {
+  font-size: 1.5rem !important;
+}
+
+.presentation-mode .text-xl {
+  font-size: 1.8rem !important;
+}
+
+.presentation-mode .text-2xl {
+  font-size: 2.2rem !important;
+}
+
+.presentation-mode .text-3xl {
+  font-size: 2.6rem !important;
+}
+
+/* Ajustes específicos para componentes no modo apresentação */
+.presentation-mode .roadmap-table th,
+.presentation-mode .roadmap-table td {
+  font-size: 1.3rem !important;
+}
+
+.presentation-mode .roadmap-table .month-header {
+  font-size: 1.4rem !important;
+  font-weight: 600 !important;
+}
+
+.presentation-mode .roadmap-table .quarter-header {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+}
+
+.presentation-mode .roadmap-table .item-name-cell {
+  font-size: 1.4rem !important;
+  font-weight: 600 !important;
+}
+
+/* Ajustes para subitens no modo apresentação - manter tamanho original */
+.presentation-mode .text-\[10px\] {
+  font-size: 10px !important;
+}
+
+/* Manter subitens com tamanho original no modo apresentação */
+.presentation-mode .bg-gray-50 span {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.presentation-mode .bg-gray-50 .text-xs {
+  font-size: 12px !important;
+}
+
+.presentation-mode .bg-gray-50 .w-24 {
+  width: 6rem !important;
+  height: 1.5rem !important;
+}
+
+.presentation-mode .bg-gray-50 .w-2 {
+  width: 0.5rem !important;
+  height: 0.5rem !important;
+}
+
+.presentation-mode .duration-progress-text {
+  font-size: 1.1rem !important;
+}
+
+/* Ajustes para botões e controles */
+.presentation-mode button {
+  font-size: 1.1rem !important;
+}
+
+.presentation-mode .SelectTrigger {
+  font-size: 1.1rem !important;
+}
+
+.presentation-mode .SelectItem {
+  font-size: 1.1rem !important;
+}
+
+/* Ajustes para abas de produtos */
+.presentation-mode [class*="product-tabs"] button {
+  font-size: 1.2rem !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+/* Ajustes para legenda de status */
+.presentation-mode .bg-white h3 {
+  font-size: 1.3rem !important;
+}
+
+.presentation-mode .bg-white p {
+  font-size: 1.1rem !important;
+}
+
+/* Ajustes para modal de visualização */
+.presentation-mode .DialogTitle {
+  font-size: 1.5rem !important;
+}
+
+.presentation-mode .DialogDescription {
+  font-size: 1.2rem !important;
+}
+
+.presentation-mode .DialogContent {
+  font-size: 1.1rem !important;
+}
+
+/* Ajustes adicionais para melhor legibilidade no modo apresentação */
+.presentation-mode .roadmap-table-container {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15) !important;
+}
+
+.presentation-mode .status-visual {
+  min-height: 24px !important;
+  border-radius: 8px !important;
+}
+
+/* Manter o padding original das células dos meses para preservar o posicionamento das cores */
+.presentation-mode .roadmap-table .month-cell {
+  padding: 4px !important;
+}
+
+.presentation-mode .duration-progress {
+  height: 28px !important;
+}
+
+.presentation-mode .duration-progress-text {
+  font-weight: 600 !important;
+}
+
+/* Melhorar contraste e legibilidade dos subitens */
+.presentation-mode .bg-gray-50 {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.presentation-mode .bg-gray-50 span {
+  font-weight: 500 !important;
+}
+
+/* Garantir que as cores dos status apareçam no modo apresentação - usando as mesmas variáveis CSS */
+.presentation-mode .status-nao-iniciado {
+  background-color: var(--status-not-started) !important;
+}
+
+.presentation-mode .status-proxima-sprint {
+  background-color: var(--status-next-sprint) !important;
+}
+
+.presentation-mode .status-sprint-atual {
+  background-color: var(--status-current-sprint) !important;
+}
+
+.presentation-mode .status-em-finalizacao {
+  background-color: var(--status-finalizing) !important;
+}
+
+.presentation-mode .status-concluida {
+  background-color: var(--status-completed) !important;
+}
+
+/* Classes específicas para cores dos subitens - usando as mesmas variáveis CSS */
+.subitem-nao_iniciado {
+  border-left-color: var(--status-not-started) !important;
+}
+
+.subitem-proxima_sprint {
+  border-left-color: var(--status-next-sprint) !important;
+}
+
+.subitem-sprint_atual {
+  border-left-color: var(--status-current-sprint) !important;
+}
+
+.subitem-em_finalizacao {
+  border-left-color: var(--status-finalizing) !important;
+}
+
+.subitem-concluida {
+  border-left-color: var(--status-completed) !important;
+}
+
+/* Garantir que funcionem no modo apresentação - usando as mesmas variáveis CSS */
+.presentation-mode .subitem-nao_iniciado {
+  border-left-color: var(--status-not-started) !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+.presentation-mode .subitem-proxima_sprint {
+  border-left-color: var(--status-next-sprint) !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+.presentation-mode .subitem-sprint_atual {
+  border-left-color: var(--status-current-sprint) !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+.presentation-mode .subitem-em_finalizacao {
+  border-left-color: var(--status-finalizing) !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+.presentation-mode .subitem-concluida {
+  border-left-color: var(--status-completed) !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+/* Remover regras conflitantes - layout dos subitens agora é controlado pelo HTML */
+
+
+
+
 
 :root {
   --radius: 0.625rem;
@@ -387,7 +636,37 @@
 }
 
 .roadmap-table .col-month {
-  width: 7%;
+  width: 8%; /* Aumentada de 7% para 8% */
+  min-width: 200px; /* Largura mínima muito maior para telas menores */
+}
+
+/* Ajustes responsivos para colunas dos meses - valores maximizados */
+@media (max-width: 1200px) {
+  .roadmap-table .col-month {
+    width: 13%; /* Aumentada de 12% para 13% */
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 992px) {
+  .roadmap-table .col-month {
+    width: 16%; /* Aumentada de 15% para 16% */
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .roadmap-table .col-month {
+    width: 19%; /* Aumentada de 18% para 19% */
+    min-width: 350px;
+  }
+}
+
+@media (max-width: 576px) {
+  .roadmap-table .col-month {
+    width: 21%; /* Aumentada de 20% para 21% */
+    min-width: 400px;
+  }
 }
 
 .roadmap-table .col-okr {
@@ -395,15 +674,82 @@
 }
 
 .roadmap-table .col-metric {
-  width: 22%;
+  width: 18%; /* Reduzida de 22% para 18% */
 }
 
 .roadmap-table .col-tese {
-  width: 25%;
+  width: 22%; /* Aumentada de 18% para 22% */
+}
+
+/* Ajustes responsivos para outras colunas - otimizadas para dar prioridade às colunas T */
+@media (max-width: 1200px) {
+  .roadmap-table .col-item {
+    width: 12%;
+  }
+  .roadmap-table .col-metric {
+    width: 12%; /* Reduzida de 14% para 12% */
+  }
+  .roadmap-table .col-tese {
+    width: 16%; /* Aumentada de 14% para 16% */
+  }
+}
+
+@media (max-width: 992px) {
+  .roadmap-table .col-item {
+    width: 10%;
+  }
+  .roadmap-table .col-metric {
+    width: 10%; /* Reduzida de 12% para 10% */
+  }
+  .roadmap-table .col-tese {
+    width: 14%; /* Aumentada de 12% para 14% */
+  }
+}
+
+@media (max-width: 768px) {
+  .roadmap-table .col-item {
+    width: 8%;
+  }
+  .roadmap-table .col-metric {
+    width: 8%; /* Reduzida de 10% para 8% */
+  }
+  .roadmap-table .col-tese {
+    width: 12%; /* Aumentada de 10% para 12% */
+  }
+}
+
+@media (max-width: 576px) {
+  .roadmap-table .col-item {
+    width: 6%;
+  }
+  .roadmap-table .col-metric {
+    width: 6%; /* Reduzida de 8% para 6% */
+  }
+  .roadmap-table .col-tese {
+    width: 10%; /* Aumentada de 8% para 10% */
+  }
 }
 
 .roadmap-table .col-actions {
   width: 96px;
+}
+
+/* Garantir que as colunas T tenham prioridade absoluta em telas pequenas */
+@media (max-width: 576px) {
+  .roadmap-table-container {
+    overflow-x: auto;
+    min-width: 100%;
+  }
+  
+  .roadmap-table {
+    min-width: 1200px; /* Força largura mínima para garantir espaço das colunas T */
+  }
+  
+  /* Prioridade máxima para colunas dos meses em mobile */
+  .roadmap-table .col-month {
+    width: 25% !important;
+    min-width: 400px !important;
+  }
 }
 
 /* Ajustar largura da coluna de meses */

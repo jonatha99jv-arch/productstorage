@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Edit, Trash2, Search, Calendar } from 'lucide-react'
+import { Edit, Trash2, Search, Calendar, Copy } from 'lucide-react'
 
 const QUARTERS = {
   'Q1': { label: 'T1', months: ['Jan', 'Fev', 'Mar'], monthNumbers: [1, 2, 3] },
@@ -47,6 +47,7 @@ const SUBPRODUCT_LABELS = {
   'company': 'Company',
   'brasil': 'Brasil',
   'global': 'Global',
+  'nr1': 'NR1',
   'geral': 'Geral',
 }
 
@@ -57,6 +58,7 @@ const SUBPRODUCT_COLORS = {
   'company': 'bg-purple-600',
   'brasil': 'bg-green-600',
   'global': 'bg-blue-600',
+  'nr1': 'bg-orange-600',
   'geral': 'bg-gray-600',
 }
 
@@ -66,89 +68,100 @@ const formatSubProductLabel = (value) => {
   return String(value).replaceAll('_', ' ').replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
-const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
+const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, onDuplicateItem, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const getDefaultQuarter = () => {
-    const month = new Date().getMonth() + 1
-    if (month <= 3) return 'Q1'
-    if (month <= 6) return 'Q2'
-    if (month <= 9) return 'Q3'
+    const m = new Date().getMonth() + 1
+    if (m <= 3) return 'Q1'
+    if (m <= 6) return 'Q2'
+    if (m <= 9) return 'Q3'
     return 'Q4'
   }
   const [selectedQuarter, setSelectedQuarter] = useState(getDefaultQuarter())
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
   const [selectedIds, setSelectedIds] = useState([])
   const [previewItem, setPreviewItem] = useState(null)
   const [expandedItems, setExpandedItems] = useState({})
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
 
   const toggleExpanded = (id) => {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Função para verificar se um item está ativo em um determinado mês/ano
+  // Persistir filtros para manter valor após primeira carga
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('roadmapFilters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.quarter) setSelectedQuarter(parsed.quarter)
+        if (parsed.year) setSelectedYear(parsed.year)
+        if (parsed.statusFilter) setStatusFilter(parsed.statusFilter)
+      }
+      setFiltersLoaded(true)
+    } catch (e) {
+      console.warn('Não foi possível carregar filtros salvos', e)
+      setFiltersLoaded(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!filtersLoaded) return
+    try {
+      const payload = {
+        quarter: selectedQuarter,
+        year: selectedYear,
+        statusFilter
+      }
+      localStorage.setItem('roadmapFilters', JSON.stringify(payload))
+    } catch (e) {
+      // ignora erros de storage
+    }
+  }, [filtersLoaded, selectedQuarter, selectedYear, statusFilter])
+
+  // Verificar se um item está ativo em um determinado mês/ano
   const isItemActiveInMonth = (item, month, year) => {
     if (!item.dataInicio || !item.dataFim) return false
-
     const startDate = new Date(item.dataInicio)
     const endDate = new Date(item.dataFim)
-    
-    // Usar o ano das datas do item, não o ano atual
-    
-    // normalizar data de início para primeiro dia do mês de início
-    const startMonthDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
-    // normalizar data final para último dia do mês de fim
-    const endMonthDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0)
 
-    const checkMonthStartDate = new Date(year, month - 1, 1)
-    const checkMonthEndDate = new Date(year, month, 0)
-
-    return startMonthDate <= checkMonthEndDate && endMonthDate >= checkMonthStartDate
-  }
-
-  // Função para calcular a proporção de preenchimento de um mês
-  const getMonthFillProportion = (item, month, year) => {
-    if (!item.dataInicio || !item.dataFim) return 0
-
-    const startDate = new Date(item.dataInicio)
-    const endDate = new Date(item.dataFim)
-    
-    // Usar o ano das datas do item
+    // normalizar para mês/ano de verificação
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 0)
-    
-    // Se o item não está ativo neste mês, retorna 0
+
+    return startDate <= monthEnd && endDate >= monthStart
+  }
+
+  // Calcular proporção de preenchimento de um mês específico em um ano específico
+  const getMonthFillProportion = (item, month, year) => {
+    if (!item.dataInicio || !item.dataFim) return 0
+    const startDate = new Date(item.dataInicio)
+    const endDate = new Date(item.dataFim)
+
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 0)
+
     if (startDate > monthEnd || endDate < monthStart) return 0
-    
-    // Calcular quantos dias do mês o item está ativo
+
     const effectiveStart = startDate > monthStart ? startDate : monthStart
     const effectiveEnd = endDate < monthEnd ? endDate : monthEnd
-    
-    // Calcular diferença em dias
+
     const timeDiff = effectiveEnd.getTime() - effectiveStart.getTime()
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1
-    
+
     const daysInMonth = monthEnd.getDate()
     const activeDays = Math.max(0, daysDiff)
-    
+
     return activeDays / daysInMonth
   }
 
-  // Verificar se o item tem qualquer sobreposição com os meses do trimestre, considerando mudanças de ano
-  const shouldShowItemInQuarter = (item, quarter) => {
+  // Verificar se o item tem sobreposição com o trimestre/ano selecionado
+  const shouldShowItemInQuarter = (item, quarter, year) => {
     if (!item.dataInicio || !item.dataFim) return true
     const quarterMonths = QUARTERS[quarter].monthNumbers
-    const start = new Date(item.dataInicio)
-    const end = new Date(item.dataFim)
-    // Normalizar para o primeiro/último dia dos meses
-    let cursor = new Date(start.getFullYear(), start.getMonth(), 1)
-    const endMonthEdge = new Date(end.getFullYear(), end.getMonth(), 1)
-    while (cursor <= endMonthEdge) {
-      const monthNum = cursor.getMonth() + 1
-      if (quarterMonths.includes(monthNum)) return true
-      // avançar 1 mês
-      cursor.setMonth(cursor.getMonth() + 1)
-    }
-    return false
+    return quarterMonths.some(month => isItemActiveInMonth(item, month, year))
   }
 
   // Função de ordenação por prioridade de status, data de início e data de finalização
@@ -188,7 +201,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
 
       const matchesProduct = !currentProduct || item.produto === currentProduct
       const matchesSubProduct = (() => {
-        if (currentProduct === 'web' || currentProduct === 'aplicativo') {
+        if (currentProduct === 'jornada_profissional' || currentProduct === 'aplicativo') {
           // Em Geral (ou sem seleção), mostrar todos os subprodutos e também itens sem subProduto
           if (!currentSubProduct || currentSubProduct === 'geral') return true
           return item.subProduto === currentSubProduct
@@ -204,7 +217,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       )
 
       // Sempre respeitar o trimestre selecionado
-      const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter)
+      const matchesQuarter = shouldShowItemInQuarter(item, selectedQuarter, selectedYear)
 
       return matchesSearch && matchesProduct && matchesSubProduct && matchesQuarter && matchesStatus
     })
@@ -226,6 +239,11 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     onUpdateItemStatus(itemId, newStatus)
   }
 
+  const handleDuplicate = (item) => {
+    if (!item) return
+    onDuplicateItem(item)
+  }
+
   const getOKRName = (okrId) => {
     const okr = okrs.find(o => o.id === okrId)
     return okr ? okr.objetivo : ''
@@ -236,6 +254,30 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     // Se o status for 'concluida', retornar 100% automaticamente
     if (item.status === 'concluida') return 100
     
+    // Se o item possui subitens, calcular progresso baseado nos subitens
+    if (Array.isArray(item.subitens) && item.subitens.length > 0) {
+      const subitens = item.subitens.map(subitem => {
+        // Converter subitem antigo (string) para nova estrutura
+        return typeof subitem === 'string' 
+          ? { texto: subitem, status: 'nao_iniciado' } 
+          : subitem
+      })
+      
+      // Contar subitens por status
+      const statusCounts = subitens.reduce((acc, subitem) => {
+        const status = subitem.status || 'nao_iniciado'
+        acc[status] = (acc[status] || 0) + 1
+        return acc
+      }, {})
+      
+      const totalSubitens = subitens.length
+      const concluidos = statusCounts['concluida'] || 0
+      
+      // Calcular progresso baseado na porcentagem de subitens concluídos
+      return Math.round((concluidos / totalSubitens) * 100)
+    }
+    
+    // Para itens sem subitens, usar cálculo baseado em datas (comportamento atual)
     if (!item.dataInicio || !item.dataFim) return 0
     
     const startDate = new Date(item.dataInicio)
@@ -263,7 +305,12 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return `${formatDate(startDate)} - ${formatDate(endDate)}`
   }
 
-  // getEndDate não utilizado — removido para linter
+  const getEndDate = (item) => {
+    if (!item?.dataInicio || !item?.dataFim) return null
+    const startDate = new Date(item.dataInicio)
+    const endDate = new Date(item.dataFim)
+    return endDate
+  }
 
   const formatFullDate = (dateLike) => {
     if (!dateLike) return ''
@@ -284,8 +331,21 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return Math.max(1, months)
   }
 
+  const getStatusColor = (status) => {
+    const config = STATUS_CONFIG[status] || STATUS_CONFIG['nao_iniciado']
+    // Mapear as classes CSS para cores hexadecimais - usando as mesmas cores das variáveis CSS
+    const colorMap = {
+      'status-nao-iniciado': '#ff6b6b', // --status-not-started
+      'status-proxima-sprint': '#ff9f43', // --status-next-sprint
+      'status-sprint-atual': '#ffc048', // --status-current-sprint
+      'status-em-finalizacao': '#a8e6cf', // --status-finalizing
+      'status-concluida': '#16A34A' // --status-completed
+    }
+    return colorMap[config.className] || '#6b7280' // gray-500 como fallback
+  }
+
   const currentQuarter = QUARTERS[selectedQuarter]
-  // const currentYear = new Date().getFullYear() // não utilizado
+  const currentYear = selectedYear
   const filteredItems = getFilteredAndSortedItems()
 
   const quarterKeys = Object.keys(QUARTERS)
@@ -298,6 +358,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     const idx = quarterKeys.indexOf(selectedQuarter)
     const next = idx >= quarterKeys.length - 1 ? quarterKeys[0] : quarterKeys[idx + 1]
     setSelectedQuarter(next)
+  }
+
+  const getYearOptions = () => {
+    const years = new Set()
+    years.add(new Date().getFullYear())
+    items.forEach(item => {
+      if (item?.dataInicio) years.add(new Date(item.dataInicio).getFullYear())
+      if (item?.dataFim) years.add(new Date(item.dataFim).getFullYear())
+    })
+    const arr = Array.from(years)
+    return arr.sort((a, b) => a - b)
   }
 
   return (
@@ -315,6 +386,21 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 {Object.entries(QUARTERS).map(([key, quarter]) => (
                   <SelectItem key={key} value={key}>
                     {quarter.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-company-dark-blue">Ano:</label>
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {getYearOptions().map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -350,9 +436,6 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
             <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50" disabled={selectedIds.length === 0} onClick={() => onDeleteBulk && onDeleteBulk(selectedIds)}>
               Excluir selecionados ({selectedIds.length})
             </button>
-            <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-red-50 text-red-700" onClick={() => onDeleteBulk && onDeleteBulk(filteredItems.map(i => i.id))}>
-              Excluir todos do trimestre/visão
-            </button>
           </div>
         )}
       </div>
@@ -381,7 +464,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
               <th rowSpan="2" className="merged-header item-cell item-name-cell">Item</th>
               <th colSpan="3" className="merged-header quarter-header">
                 <button type="button" className="quarter-arrow left" aria-label="Trimestre anterior" onClick={goPrevQuarter} />
-                {currentQuarter.label}
+                {currentQuarter.label} {currentYear}
                 <button type="button" className="quarter-arrow right" aria-label="Próximo trimestre" onClick={goNextQuarter} />
               </th>
               <th rowSpan="2" className="merged-header item-cell">OKR</th>
@@ -465,11 +548,72 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                       {expandedItems[item.id] && Array.isArray(item.subitens) && item.subitens.length > 0 && (
                         <div className="mt-2">
                           <div className="text-[10px] text-gray-500 mb-1">Subitens</div>
-                          <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
-                            {item.subitens.map((si, idx) => (
-                              <li key={idx}>{si}</li>
-                            ))}
-                          </ul>
+                          <div className="space-y-1">
+                            {item.subitens
+                              .map(subitem => {
+                                // Converter subitem antigo (string) para nova estrutura
+                                const subitemObj = typeof subitem === 'string' 
+                                  ? { texto: subitem, status: 'nao_iniciado' } 
+                                  : subitem
+                                return subitemObj
+                              })
+                              .sort((a, b) => {
+                                // Ordenar por prioridade do status (menor número = maior prioridade)
+                                const priorityA = STATUS_CONFIG[a.status]?.priority || 5
+                                const priorityB = STATUS_CONFIG[b.status]?.priority || 5
+                                return priorityA - priorityB
+                              })
+                              .map((subitemObj, idx) => {
+                                const statusConfig = STATUS_CONFIG[subitemObj.status] || STATUS_CONFIG['nao_iniciado']
+                                
+                                return (
+                                  <div key={idx} className={`flex items-center bg-gray-50 px-2 py-1 rounded text-xs border-l-4 gap-2 subitem-${subitemObj.status}`}>
+                                    <span className="text-gray-700 flex-1 min-w-0">{subitemObj.texto}</span>
+                                    <div className="w-20 h-5 text-xs flex items-center space-x-1 flex-shrink-0">
+                                      <span className="text-xs whitespace-nowrap">{statusConfig.label}</span>
+                                    </div>
+                                    <Select
+                                      value={subitemObj.status}
+                                      onValueChange={(newStatus) => {
+                                        // Atualizar status do subitem
+                                        const updatedSubitens = [...item.subitens]
+                                        const originalIndex = item.subitens.findIndex((sub, i) => {
+                                          const subObj = typeof sub === 'string' ? { texto: sub, status: 'nao_iniciado' } : sub
+                                          return subObj.texto === subitemObj.texto && subObj.status === subitemObj.status
+                                        })
+                                        
+                                        if (originalIndex !== -1) {
+                                          if (typeof updatedSubitens[originalIndex] === 'string') {
+                                            updatedSubitens[originalIndex] = { texto: updatedSubitens[originalIndex], status: newStatus }
+                                          } else {
+                                            updatedSubitens[originalIndex] = { ...updatedSubitens[originalIndex], status: newStatus }
+                                          }
+                                        }
+                                        
+                                        // Chamar função para atualizar o item
+                                        const updatedItem = { ...item, subitens: updatedSubitens }
+                                        onUpdateItemStatus(item.id, item.status, updatedItem)
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-6 h-5 text-xs border-0 bg-transparent hover:bg-gray-100 flex-shrink-0 p-0">
+                                        <div className="flex items-center justify-center">
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                          </svg>
+                                        </div>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Object.entries(STATUS_CONFIG).map(([status, config]) => (
+                                          <SelectItem key={status} value={status}>
+                                            <span>{config.label}</span>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )
+                              })}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -478,23 +622,22 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                   {/* Colunas dos meses com marcação de período */}
                   {currentQuarter.months.map((month, index) => {
                     const monthNumber = currentQuarter.monthNumbers[index]
-                    // Usar o ano das datas do item, não o ano atual
-                    const itemYear = item.dataInicio ? new Date(item.dataInicio).getFullYear() : new Date().getFullYear()
-                    const isActive = isItemActiveInMonth(item, monthNumber, itemYear)
-                    const fillProportion = getMonthFillProportion(item, monthNumber, itemYear)
+                    const isActive = isItemActiveInMonth(item, monthNumber, selectedYear)
+                    const fillProportion = getMonthFillProportion(item, monthNumber, selectedYear)
                     
                     // Calcular posição da barra baseada na data de início
                     const computePlacement = () => {
                       if (!item.dataInicio) return { leftPercent: 0 }
                       const startDate = new Date(item.dataInicio)
-                      if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === itemYear) {
+                      if (startDate.getMonth() === monthNumber - 1 && startDate.getFullYear() === selectedYear) {
                         const dayOfMonth = startDate.getDate()
-                        const daysInMonth = new Date(itemYear, monthNumber, 0).getDate()
+                        const daysInMonth = new Date(selectedYear, monthNumber, 0).getDate()
                         const startPosition = (dayOfMonth - 1) / daysInMonth
                         return { leftPercent: Math.max(0, Math.min(100, startPosition * 100)) }
                       }
                       return { leftPercent: 0 }
                     }
+                    
                     
                     return (
                       <td key={month} className="month-cell">
@@ -521,6 +664,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                           >
                           </div>
                         )}
+                        
                       </td>
                     )
                   })}
@@ -550,6 +694,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                       <div className="flex space-x-1 justify-center items-center">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="h-8 w-8 p-0 hover:bg-blue-100">
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDuplicate(item)} className="h-8 w-8 p-0 hover:bg-purple-100">
+                          <Copy className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="h-8 w-8 p-0 hover:bg-red-100">
                           <Trash2 className="h-4 w-4" />
@@ -623,16 +770,36 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                 </div>
               </div>
 
-              {previewItem.subitens && previewItem.subitens.length > 0 && (
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Subitens</div>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    {previewItem.subitens.map((si, i) => (
-                      <li key={i}>{si}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                             {previewItem.subitens && previewItem.subitens.length > 0 && (
+                 <div>
+                  <div className="text-sm text-gray-500 mb-2">Subitens</div>
+                  <div className="space-y-2">
+                     {previewItem.subitens
+                       .map(si => {
+                         // Converter subitem antigo (string) para nova estrutura
+                         const subitemObj = typeof si === 'string' ? { texto: si, status: 'nao_iniciado' } : si
+                         return subitemObj
+                       })
+                       .sort((a, b) => {
+                         // Ordenar por prioridade do status (menor número = maior prioridade)
+                         const priorityA = STATUS_CONFIG[a.status]?.priority || 5
+                         const priorityB = STATUS_CONFIG[b.status]?.priority || 5
+                         return priorityA - priorityB
+                       })
+                       .map((subitemObj, i) => {
+                         return (
+                           <div key={i} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border-l-4 gap-3" style={{ borderLeftColor: getStatusColor(subitemObj.status) }}>
+                             <span className="text-gray-700 flex-1 min-w-0 text-sm">{subitemObj.texto}</span>
+                             <div className="w-24 h-6 flex items-center space-x-2 flex-shrink-0">
+                               <div className={`w-3 h-3 rounded-full ${STATUS_CONFIG[subitemObj.status]?.className.replace('status-', 'bg-')}`}></div>
+                               <span className="text-sm whitespace-nowrap">{STATUS_CONFIG[subitemObj.status]?.label || subitemObj.status}</span>
+                             </div>
+                           </div>
+                         )
+                       })}
+                   </div>
+                 </div>
+               )}
 
               {(previewItem.dataInicio && previewItem.dataFim) && (
                 <div>

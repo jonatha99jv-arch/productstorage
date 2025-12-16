@@ -15,7 +15,7 @@ const REQUIRED_HEADERS = [
 ]
 
 // Cabeçalhos opcionais
-const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição'] // 'Descrição' é opcional
+const OPTIONAL_HEADERS = ['Subproduto', 'Duração', 'Descrição', 'Subitens', 'Ano'] // 'Descrição', 'Subitens' e 'Ano' são opcionais
 
 const subProductMap = {
   'geral': 'geral',
@@ -26,6 +26,7 @@ const subProductMap = {
   'company': 'company',
   'brasil': 'brasil',
   'global': 'global',
+  'nr1': 'nr1',
 }
 
 const normalizeText = (value) => {
@@ -38,8 +39,63 @@ const normalizeText = (value) => {
 
 const normalizeProduct = (value) => {
   const key = normalizeText(value)
-  if (['aplicativo','web','parcerias','ai','automacao'].includes(key)) return key
+  if (['aplicativo','jornada_profissional','parcerias','hr_experience','ai','automacao'].includes(key)) return key
   return 'aplicativo'
+}
+
+// Função para migrar produtos/subprodutos baseado nas novas regras
+const migrateProductSubProduct = (item) => {
+  const { produto, subProduto, nome } = item
+  
+  // Mapeamento de subprodutos para produtos corretos
+  const subProductToProductMap = {
+    'company': 'hr_experience',
+    'nr1': 'hr_experience',
+    'portal_estrela': 'aplicativo',
+    'brasil': 'aplicativo',
+    'global': 'aplicativo',
+    'backoffice': 'jornada_profissional',
+    'doctor': 'jornada_profissional'
+  }
+  
+  // Se temos um subproduto, determinar o produto correto baseado nele
+  if (subProduto && subProductToProductMap[subProduto]) {
+    const produtoCorreto = subProductToProductMap[subProduto]
+    
+    // Se o produto atual não é o correto, migrar
+    if (produto !== produtoCorreto) {
+      console.log(`🔄 Migrando item "${nome}" de ${produto}/${subProduto} para ${produtoCorreto}/${subProduto}`)
+      return {
+        ...item,
+        produto: produtoCorreto,
+        subProduto: subProduto
+      }
+    }
+  }
+  
+  // Casos específicos de migração baseados no produto atual
+  // Se o subproduto é 'company' e o produto é 'jornada_profissional', migrar para 'hr_experience'
+  if (subProduto === 'company' && produto === 'jornada_profissional') {
+    console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Company para HR Experience/Company`)
+    return {
+      ...item,
+      produto: 'hr_experience',
+      subProduto: 'company'
+    }
+  }
+  
+  // Se o subproduto é 'portal_estrela' e o produto é 'jornada_profissional', migrar para 'aplicativo'
+  if (subProduto === 'portal_estrela' && produto === 'jornada_profissional') {
+    console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Portal Estrela para Jornada do Paciente/Portal Estrela`)
+    return {
+      ...item,
+      produto: 'aplicativo',
+      subProduto: 'portal_estrela'
+    }
+  }
+  
+  // Retornar item sem alterações se não precisar de migração
+  return item
 }
 
 const statusMap = {
@@ -107,10 +163,24 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
         const statusLabel = String(row[idx['Status']] || '').trim()
         const produto = normalizeProduct(row[idx['Produto']])
         const subProdCell = idx['Subproduto'] != null ? row[idx['Subproduto']] : ''
+        const subitensCell = idx['Subitens'] != null ? row[idx['Subitens']] : ''
+        const anoCell = idx['Ano'] != null ? row[idx['Ano']] : ''
+        const anoRef = (() => {
+          const parsed = Number(anoCell)
+          if (Number.isInteger(parsed) && parsed >= 2000 && parsed <= 2100) return parsed
+          return null
+        })()
         let subProduto = ''
-        if (produto === 'web' || produto === 'aplicativo') {
+        if (produto === 'jornada_profissional' || produto === 'aplicativo' || produto === 'hr_experience') {
           const key = normalizeText(subProdCell || 'geral')
           subProduto = subProductMap[key] || ''
+        }
+
+        // Processar subitens se fornecidos
+        let subitens = []
+        if (subitensCell) {
+          const subitensList = String(subitensCell).split(';').map(s => s.trim()).filter(s => s)
+          subitens = subitensList.map(subitem => ({ texto: subitem, status: 'nao_iniciado' }))
         }
 
         if (!item) {
@@ -121,6 +191,17 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
 
         // Processar data final - priorizar "Data Final", mas manter compatibilidade com "Duração"
         let dataFim = dataFinal
+        const applyYear = (d) => {
+          if (!d || !anoRef) return d
+          const clone = new Date(d)
+          if (Number.isNaN(clone.getTime())) return d
+          clone.setFullYear(anoRef)
+          return clone
+        }
+        const applyYearStart = applyYear(dataInicio)
+        const applyYearEnd = applyYear(dataFim)
+        dataInicio = applyYearStart
+        dataFim = applyYearEnd
         
         // Se não tiver "Data Final", tentar calcular a partir de "Duração" (para compatibilidade)
         if (!dataFim && duracao && dataInicio) {
@@ -140,7 +221,7 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           continue
         }
 
-        const payload = {
+        const payload = migrateProductSubProduct({
           nome: item,
           inputOutputMetric: metric,
           teseProduto: tese,
@@ -150,8 +231,9 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           status: statusMap[statusLabel] || 'nao_iniciado',
           okrId: '',
           produto,
-          subProduto
-        }
+          subProduto,
+          subitens
+        })
 
         try {
           // Preferir upsert se fornecido para evitar duplicações
@@ -195,6 +277,10 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
             <br />
             <span className="text-xs text-gray-500">
               Nota: Se não tiver "Data Final", pode usar "Duração" (em meses) que será convertida automaticamente
+              <br />
+              Coluna "Ano" (opcional): se preenchido, força o ano de início/fim (útil para planilhas sem ano).
+              <br />
+              Coluna "Subitens" (opcional): Use ponto e vírgula (;) para separar múltiplos subitens. Ex: "Subitem 1; Subitem 2; Subitem 3"
             </span>
           </p>
           {(successCount > 0 || errorCount > 0 || logs.length > 0) && (

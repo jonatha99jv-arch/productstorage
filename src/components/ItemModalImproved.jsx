@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon, Plus, X, ChevronDown } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const STATUS_OPTIONS = [
   { value: 'nao_iniciado', label: 'Não Iniciado' },
@@ -16,30 +17,35 @@ const STATUS_OPTIONS = [
 ]
 
 const PRODUCT_OPTIONS = [
-  { value: 'aplicativo', label: 'Aplicativo' },
-  { value: 'web', label: 'Web' },
-  { value: 'parcerias', label: 'Parcerias' },
+  { value: 'aplicativo', label: 'Jornada do Paciente' },
+  { value: 'jornada_profissional', label: 'Jornada do Profissional' },
+  { value: 'parcerias', label: 'Jornada do Parceiro' },
+  { value: 'hr_experience', label: 'HR Experience' },
   { value: 'ai', label: 'AI' },
   { value: 'automacao', label: 'Automação' }
 ]
 
 const WEB_SUB_PRODUCTS = [
   { value: 'backoffice', label: 'Backoffice' },
-  { value: 'portal_estrela', label: 'Portal Estrela' },
-  { value: 'doctor', label: 'Doctor' },
-  { value: 'company', label: 'Company' }
+  { value: 'doctor', label: 'Doctor' }
 ]
 
 const APP_SUB_PRODUCTS = [
   { value: 'brasil', label: 'Brasil' },
-  { value: 'global', label: 'Global' }
+  { value: 'global', label: 'Global' },
+  { value: 'portal_estrela', label: 'Portal Estrela' }
+]
+
+const HR_EXPERIENCE_SUB_PRODUCTS = [
+  { value: 'company', label: 'Company' },
+  { value: 'nr1', label: 'NR1' }
 ]
 
 const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     id: null,
     nome: '',
-    subitens: [''],
+    subitens: [{ texto: '', status: 'nao_iniciado' }],
     inputOutputMetric: '',
     teseProduto: '',
     descricao: '',
@@ -56,19 +62,25 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [errors, setErrors] = useState({})
 
   // Refs para focar/rolar até o primeiro campo inválido
-  const nomeRef = useRef(null)
-  const produtoRef = useRef(null)
-  const metricRef = useRef(null)
-  const teseRef = useRef(null)
   const dataInicioBtnRef = useRef(null)
   const dataFimBtnRef = useRef(null)
 
   useEffect(() => {
     if (item) {
+      // Converter subitens antigos (strings) para nova estrutura (objetos com status)
+      const subitensFormatados = item.subitens && item.subitens.length > 0 
+        ? item.subitens.map(subitem => {
+            if (typeof subitem === 'string') {
+              return { texto: subitem, status: 'nao_iniciado' }
+            }
+            return subitem
+          })
+        : [{ texto: '', status: 'nao_iniciado' }]
+
       setFormData({
         id: item.id || null,
         nome: item.nome || '',
-        subitens: item.subitens && item.subitens.length > 0 ? item.subitens : [''],
+        subitens: subitensFormatados,
         inputOutputMetric: item.inputOutputMetric || '',
         teseProduto: item.teseProduto || '',
         descricao: item.descricao || '',
@@ -91,9 +103,9 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
     setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
-  const handleSubitemChange = (index, value) => {
+  const handleSubitemChange = (index, field, value) => {
     const newSubitens = [...formData.subitens]
-    newSubitens[index] = value
+    newSubitens[index] = { ...newSubitens[index], [field]: value }
     setFormData(prev => ({
       ...prev,
       subitens: newSubitens
@@ -103,7 +115,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const addSubitem = () => {
     setFormData(prev => ({
       ...prev,
-      subitens: [...prev.subitens, '']
+      subitens: [...prev.subitens, { texto: '', status: 'nao_iniciado' }]
     }))
   }
 
@@ -161,7 +173,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
     const dataToSave = {
       ...formData,
-      subitens: formData.subitens.filter(subitem => subitem.trim() !== ''),
+      subitens: formData.subitens.filter(subitem => subitem.texto.trim() !== ''),
       dataInicio: formData.dataInicio ? formData.dataInicio.toISOString() : null,
       dataFim: formData.dataFim ? formData.dataFim.toISOString() : null
     }
@@ -192,7 +204,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="nome">Novo Item *</Label>
             <Input
               id="nome"
-              ref={nomeRef}
               value={formData.nome}
               onChange={(e) => handleInputChange('nome', e.target.value)}
               placeholder="Ex: Novo Aplicativo Global"
@@ -208,11 +219,10 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <div className="relative">
               <select
                 id="produto"
-                ref={produtoRef}
                 value={formData.produto}
                 onChange={(e) => {
                   handleInputChange('produto', e.target.value)
-                  if (e.target.value === 'web' || e.target.value === 'aplicativo') {
+                  if (e.target.value === 'jornada_profissional' || e.target.value === 'aplicativo' || e.target.value === 'hr_experience') {
                     handleInputChange('subProduto', '')
                   } else {
                     handleInputChange('subProduto', '')
@@ -231,8 +241,8 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             </div>
           </div>
 
-          {/* Sub-produto (Web e Aplicativo) */}
-          {(formData.produto === 'web' || formData.produto === 'aplicativo') && (
+          {/* Sub-produto (Web, Aplicativo e HR Experience) */}
+          {(formData.produto === 'jornada_profissional' || formData.produto === 'aplicativo' || formData.produto === 'hr_experience') && (
             <div>
               <Label htmlFor="subProduto">Sub-produto</Label>
               <div className="relative">
@@ -243,7 +253,9 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
                   className="w-full p-2 pr-10 border border-gray-300 rounded-md appearance-none"
                 >
                   <option value="">Geral</option>
-                  {(formData.produto === 'web' ? WEB_SUB_PRODUCTS : APP_SUB_PRODUCTS).map(option => (
+                  {(formData.produto === 'jornada_profissional' ? WEB_SUB_PRODUCTS : 
+                    formData.produto === 'aplicativo' ? APP_SUB_PRODUCTS : 
+                    formData.produto === 'hr_experience' ? HR_EXPERIENCE_SUB_PRODUCTS : []).map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -259,7 +271,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="metric">Métrica Input/Output *</Label>
             <Textarea
               id="metric"
-              ref={metricRef}
               value={formData.inputOutputMetric}
               onChange={(e) => handleInputChange('inputOutputMetric', e.target.value)}
               placeholder="Ex: Aumentar em 10% a taxa de NPS em 3 meses"
@@ -274,7 +285,6 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             <Label htmlFor="tese">Tese de Produto *</Label>
             <Textarea
               id="tese"
-              ref={teseRef}
               value={formData.teseProduto}
               onChange={(e) => handleInputChange('teseProduto', e.target.value)}
               placeholder="Ex: Acreditamos que o novo app global melhora a experiência..."
@@ -301,10 +311,26 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
             {formData.subitens.map((subitem, index) => (
               <div key={index} className="flex items-center space-x-2 mt-2">
                 <Input
-                  value={subitem}
-                  onChange={(e) => handleSubitemChange(index, e.target.value)}
+                  value={subitem.texto}
+                  onChange={(e) => handleSubitemChange(index, 'texto', e.target.value)}
                   placeholder={`Subitem ${index + 1}`}
+                  className="flex-1"
                 />
+                <Select
+                  value={subitem.status}
+                  onValueChange={(value) => handleSubitemChange(index, 'status', value)}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formData.subitens.length > 1 && (
                   <Button
                     type="button"

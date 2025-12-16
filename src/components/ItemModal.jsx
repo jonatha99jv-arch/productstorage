@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, X } from 'lucide-react'
 
 const STATUS_OPTIONS = [
@@ -17,7 +18,7 @@ const STATUS_OPTIONS = [
 const ItemModal = ({ item, okrs, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     nome: '',
-    subitens: [''],
+    subitens: [{ texto: '', status: 'nao_iniciado' }],
     inputOutputMetric: '',
     teseProduto: '',
     duracaoMeses: '',
@@ -28,9 +29,19 @@ const ItemModal = ({ item, okrs, onSave, onClose }) => {
   // Preencher formulário quando editando
   useEffect(() => {
     if (item) {
+      // Converter subitens antigos (strings) para nova estrutura (objetos com status)
+      const subitensFormatados = item.subitens && item.subitens.length > 0 
+        ? item.subitens.map(subitem => {
+            if (typeof subitem === 'string') {
+              return { texto: subitem, status: 'nao_iniciado' }
+            }
+            return subitem
+          })
+        : [{ texto: '', status: 'nao_iniciado' }]
+
       setFormData({
         nome: item.nome || '',
-        subitens: item.subitens && item.subitens.length > 0 ? item.subitens : [''],
+        subitens: subitensFormatados,
         inputOutputMetric: item.inputOutputMetric || '',
         teseProduto: item.teseProduto || '',
         duracaoMeses: item.duracaoMeses || '',
@@ -47,9 +58,9 @@ const ItemModal = ({ item, okrs, onSave, onClose }) => {
     }))
   }
 
-  const handleSubitemChange = (index, value) => {
+  const handleSubitemChange = (index, field, value) => {
     const newSubitens = [...formData.subitens]
-    newSubitens[index] = value
+    newSubitens[index] = { ...newSubitens[index], [field]: value }
     setFormData(prev => ({
       ...prev,
       subitens: newSubitens
@@ -59,7 +70,7 @@ const ItemModal = ({ item, okrs, onSave, onClose }) => {
   const addSubitem = () => {
     setFormData(prev => ({
       ...prev,
-      subitens: [...prev.subitens, '']
+      subitens: [...prev.subitens, { texto: '', status: 'nao_iniciado' }]
     }))
   }
 
@@ -83,7 +94,7 @@ const ItemModal = ({ item, okrs, onSave, onClose }) => {
     }
 
     // Filtrar subitens vazios
-    const filteredSubitens = formData.subitens.filter(subitem => subitem.trim() !== '')
+    const filteredSubitens = formData.subitens.filter(subitem => subitem.texto.trim() !== '')
 
     const itemData = {
       ...formData,
@@ -127,10 +138,26 @@ const ItemModal = ({ item, okrs, onSave, onClose }) => {
               {formData.subitens.map((subitem, index) => (
                 <div key={index} className="flex space-x-2">
                   <Input
-                    value={subitem}
-                    onChange={(e) => handleSubitemChange(index, e.target.value)}
+                    value={subitem.texto}
+                    onChange={(e) => handleSubitemChange(index, 'texto', e.target.value)}
                     placeholder={`Subitem ${index + 1}`}
+                    className="flex-1"
                   />
+                  <Select
+                    value={subitem.status}
+                    onValueChange={(value) => handleSubitemChange(index, 'status', value)}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {formData.subitens.length > 1 && (
                     <Button
                       type="button"

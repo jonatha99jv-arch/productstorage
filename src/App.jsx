@@ -50,6 +50,7 @@ function App() {
     saveRoadmapItem,
     deleteRoadmapItem,
     updateRoadmapItemStatus,
+    reorderRoadmapItems,
     saveOKR,
     deleteOKR,
     deleteRoadmapItemsBulk,
@@ -608,6 +609,7 @@ function App() {
               onDeleteItem={handleDeleteItem}
               onUpdateItemStatus={handleUpdateItemStatus}
               onDuplicateItem={handleDuplicateItem}
+              onReorderItems={reorderRoadmapItems}
               currentProduct={currentProduct}
               currentSubProduct={currentSubProduct}
               onDeleteBulk={handleDeleteBulk}

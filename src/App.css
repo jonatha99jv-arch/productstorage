@@ -807,3 +807,71 @@
   vertical-align: middle;
 }
 
+/* ========================================
+   DRAG AND DROP - Reordenação de itens
+   ======================================== */
+
+/* Coluna de arrastar */
+.roadmap-table .col-drag {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+}
+
+/* Linha sendo arrastada */
+.roadmap-table tbody tr.dragging {
+  opacity: 0.5;
+  background-color: #f1f5f9 !important;
+}
+
+/* Linha alvo do drop */
+.roadmap-table tbody tr[data-drag-over="true"] {
+  border-top: 3px solid var(--company-orange, #f97316) !important;
+}
+
+/* Cursor de arrastar */
+.roadmap-table tbody tr[draggable="true"] {
+  cursor: grab;
+}
+
+.roadmap-table tbody tr[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Ícone de arrastar */
+.roadmap-table .drag-handle {
+  cursor: grab;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.roadmap-table .drag-handle:hover {
+  background-color: #f1f5f9;
+}
+
+.roadmap-table .drag-handle:active {
+  cursor: grabbing;
+  background-color: #e2e8f0;
+}
+
+/* Feedback visual durante drag */
+.roadmap-table tbody tr.drag-over-top {
+  box-shadow: inset 0 3px 0 0 var(--company-orange, #f97316);
+}
+
+.roadmap-table tbody tr.drag-over-bottom {
+  box-shadow: inset 0 -3px 0 0 var(--company-orange, #f97316);
+}
+
+/* Animação suave ao reorganizar */
+.roadmap-table tbody tr {
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Modo de reordenação ativo - destacar a tabela */
+.roadmap-table-container.reorder-mode {
+  border-color: var(--company-orange, #f97316);
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Edit, Trash2, Search, Calendar, Copy } from 'lucide-react'
+import { Edit, Trash2, Search, Calendar, Copy, GripVertical } from 'lucide-react'
 
 const QUARTERS = {
   'Q1': { label: 'T1', months: ['Jan', 'Fev', 'Mar'], monthNumbers: [1, 2, 3] },
@@ -68,7 +68,7 @@ const formatSubProductLabel = (value) => {
   return String(value).replaceAll('_', ' ').replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
-const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, onDuplicateItem, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
+const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatus, onDuplicateItem, onReorderItems, currentProduct, currentSubProduct, onDeleteBulk, canEdit = true }) => {
   const getDefaultQuarter = () => {
     const m = new Date().getMonth() + 1
     if (m <= 3) return 'Q1'
@@ -84,6 +84,12 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   const [previewItem, setPreviewItem] = useState(null)
   const [expandedItems, setExpandedItems] = useState({})
   const [filtersLoaded, setFiltersLoaded] = useState(false)
+  
+  // Estados para drag and drop
+  const [manualOrderMode, setManualOrderMode] = useState(false)
+  const [draggedItem, setDraggedItem] = useState(null)
+  const [dragOverItemId, setDragOverItemId] = useState(null)
+  const dragCounter = useRef(0)
 
   const toggleExpanded = (id) => {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }))
@@ -167,6 +173,15 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
   // Função de ordenação por prioridade de status, data de início e data de finalização
   const sortItems = (itemsToSort) => {
     return [...itemsToSort].sort((a, b) => {
+      // Se modo de ordenação manual está ativo, usar manualOrder
+      if (manualOrderMode) {
+        const orderA = a.manualOrder || 0
+        const orderB = b.manualOrder || 0
+        if (orderA !== orderB) {
+          return orderA - orderB
+        }
+      }
+      
       // Primeiro critério: prioridade do status
       const statusPriorityA = STATUS_CONFIG[a.status]?.priority || 999
       const statusPriorityB = STATUS_CONFIG[b.status]?.priority || 999
@@ -190,6 +205,77 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       
       return endDateA - endDateB
     })
+  }
+
+  // Funções de drag and drop
+  const handleDragStart = (e, item) => {
+    setDraggedItem(item)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', item.id)
+    // Adicionar classe para styling
+    setTimeout(() => {
+      e.target.closest('tr')?.classList.add('dragging')
+    }, 0)
+  }
+
+  const handleDragEnd = (e) => {
+    setDraggedItem(null)
+    setDragOverItemId(null)
+    dragCounter.current = 0
+    e.target.closest('tr')?.classList.remove('dragging')
+  }
+
+  const handleDragEnter = (e, itemId) => {
+    e.preventDefault()
+    dragCounter.current++
+    if (draggedItem && draggedItem.id !== itemId) {
+      setDragOverItemId(itemId)
+    }
+  }
+
+  const handleDragLeave = (e) => {
+    dragCounter.current--
+    if (dragCounter.current === 0) {
+      setDragOverItemId(null)
+    }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetItem) => {
+    e.preventDefault()
+    setDragOverItemId(null)
+    dragCounter.current = 0
+
+    if (!draggedItem || draggedItem.id === targetItem.id) {
+      setDraggedItem(null)
+      return
+    }
+
+    // Reordenar os itens filtrados
+    const currentItems = getFilteredAndSortedItems()
+    const draggedIndex = currentItems.findIndex(item => item.id === draggedItem.id)
+    const targetIndex = currentItems.findIndex(item => item.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedItem(null)
+      return
+    }
+
+    // Criar nova ordem
+    const newItems = [...currentItems]
+    const [removed] = newItems.splice(draggedIndex, 1)
+    newItems.splice(targetIndex, 0, removed)
+
+    // Atualizar ordem no backend
+    if (onReorderItems) {
+      onReorderItems(newItems)
+    }
+
+    setDraggedItem(null)
   }
 
   // Filtrar itens baseado na busca, produto/sub-produto e trimestre
@@ -432,7 +518,20 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           </div>
         </div>
         {canEdit && (
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 ml-auto items-center">
+            {/* Toggle de ordenação manual */}
+            <div className="flex items-center gap-2 mr-4">
+              <label className="text-sm font-medium text-company-dark-blue cursor-pointer flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={manualOrderMode}
+                  onChange={(e) => setManualOrderMode(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-company-orange focus:ring-company-orange"
+                />
+                <GripVertical className="h-4 w-4 text-gray-500" />
+                Reordenar
+              </label>
+            </div>
             <button className="px-3 py-2 text-sm rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50" disabled={selectedIds.length === 0} onClick={() => onDeleteBulk && onDeleteBulk(selectedIds)}>
               Excluir selecionados ({selectedIds.length})
             </button>
@@ -444,6 +543,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       <div className="roadmap-table-container">
         <table className="roadmap-table">
           <colgroup>
+            {canEdit && manualOrderMode && <col className="col-drag" style={{ width: '40px' }} />}
             {canEdit && <col className="col-select" />}
             <col className="col-item" />
             <col className="col-month" />
@@ -456,6 +556,11 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           </colgroup>
           <thead>
             <tr>
+              {canEdit && manualOrderMode && (
+                <th rowSpan="2" className="merged-header w-10">
+                  <GripVertical className="h-4 w-4 text-gray-400 mx-auto" />
+                </th>
+              )}
               {canEdit && (
                 <th rowSpan="2" className="merged-header w-10">
                   <input type="checkbox" aria-label="Selecionar todos" onChange={(e) => { if (e.target.checked) setSelectedIds(filteredItems.map(i => i.id)); else setSelectedIds([]) }} checked={selectedIds.length > 0 && selectedIds.length === filteredItems.length} />
@@ -485,13 +590,32 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
           <tbody>
             {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan={canEdit ? 9 : 8} className="text-center py-8 text-gray-500">
+                <td colSpan={canEdit ? (manualOrderMode ? 10 : 9) : 8} className="text-center py-8 text-gray-500">
                   Nenhum item encontrado para este trimestre
                 </td>
               </tr>
             ) : (
               filteredItems.map(item => (
-                <tr key={item.id} className="hover:bg-gray-50">
+                <tr 
+                  key={item.id} 
+                  className={`hover:bg-gray-50 transition-all duration-150 ${
+                    draggedItem?.id === item.id ? 'opacity-50 bg-gray-100' : ''
+                  } ${
+                    dragOverItemId === item.id ? 'border-t-2 border-company-orange' : ''
+                  }`}
+                  draggable={canEdit && manualOrderMode}
+                  onDragStart={(e) => canEdit && manualOrderMode && handleDragStart(e, item)}
+                  onDragEnd={handleDragEnd}
+                  onDragEnter={(e) => canEdit && manualOrderMode && handleDragEnter(e, item.id)}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => canEdit && manualOrderMode && handleDrop(e, item)}
+                >
+                  {canEdit && manualOrderMode && (
+                    <td className="text-center align-middle cursor-grab active:cursor-grabbing">
+                      <GripVertical className="h-4 w-4 text-gray-400 mx-auto hover:text-company-orange transition-colors" />
+                    </td>
+                  )}
                   {canEdit && (
                     <td className="text-center align-middle">
                       <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={(e) => { setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id)) }} />

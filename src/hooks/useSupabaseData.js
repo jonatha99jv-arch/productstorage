@@ -219,6 +219,7 @@ export const useSupabaseData = () => {
       dataFim: dataFimLocal,
       okrId: dbItem.okr_id || '',
       subitens,
+      manualOrder: dbItem.manual_order || 0,
     }
   }
 
@@ -334,11 +335,12 @@ export const useSupabaseData = () => {
       status: appItem.status || 'nao_iniciado',
       prioridade: appItem.prioridade || 'media',
       data_inicio: toLocalDateString(appItem.dataInicio),
-              // data_fim é obrigatória para o novo sistema
+      // data_fim é obrigatória para o novo sistema
       data_fim: toLocalDateString(appItem.dataFim),
       responsavel: appItem.responsavel || null,
       okr_id: appItem.okrId ? Number(appItem.okrId) : null,
       tags,
+      manual_order: appItem.manualOrder || 0,
       updated_at: new Date().toISOString(),
     }
   }
@@ -886,6 +888,67 @@ export const useSupabaseData = () => {
     }
   }
 
+  // Função para reordenar itens do roadmap (drag and drop)
+  const reorderRoadmapItems = async (reorderedItems) => {
+    try {
+      if (isMockMode()) {
+        // Modo mock - apenas atualizar localStorage
+        console.log('🔄 Reordenando itens em modo MOCK')
+        
+        const itemsWithOrder = reorderedItems.map((item, index) => ({
+          ...item,
+          manualOrder: index + 1
+        }))
+        
+        setRoadmapItems(prev => {
+          // Manter itens que não estão na lista reordenada
+          const reorderedIds = new Set(itemsWithOrder.map(i => i.id))
+          const otherItems = prev.filter(i => !reorderedIds.has(i.id))
+          return [...itemsWithOrder, ...otherItems]
+        })
+        
+        localStorage.setItem('mockRoadmapItems', JSON.stringify(
+          reorderedItems.map((item, index) => ({ ...item, manualOrder: index + 1 }))
+        ))
+        return
+      }
+      
+      // Modo real com Supabase - atualizar ordem em batch
+      const updates = reorderedItems.map((item, index) => ({
+        id: item.id,
+        manual_order: index + 1
+      }))
+      
+      // Atualizar cada item no banco
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('roadmap_items')
+          .update({ manual_order: update.manual_order, updated_at: new Date().toISOString() })
+          .eq('id', update.id)
+        
+        if (error) {
+          console.error('Erro ao atualizar ordem do item:', error)
+        }
+      }
+      
+      // Atualizar estado local
+      const itemsWithOrder = reorderedItems.map((item, index) => ({
+        ...item,
+        manualOrder: index + 1
+      }))
+      
+      setRoadmapItems(prev => {
+        const reorderedIds = new Set(itemsWithOrder.map(i => i.id))
+        const otherItems = prev.filter(i => !reorderedIds.has(i.id))
+        return [...itemsWithOrder, ...otherItems]
+      })
+      
+    } catch (err) {
+      console.error('Erro ao reordenar itens:', err)
+      setError(err.message)
+    }
+  }
+
   return {
     roadmapItems,
     okrs,
@@ -899,6 +962,7 @@ export const useSupabaseData = () => {
     deleteRoadmapItem,
     deleteRoadmapItemsBulk,
     updateRoadmapItemStatus,
+    reorderRoadmapItems,
     saveOKR,
     deleteOKR,
     reloadData: loadData,

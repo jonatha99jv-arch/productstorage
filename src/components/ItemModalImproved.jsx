@@ -182,7 +182,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
       ...formData,
       subitens: formData.subitens
         .filter(subitem => subitem.texto.trim() !== '')
-        .map(({ _key, ...rest }) => rest),
+        .map(({ texto, status }) => ({ texto, status })),
       dataInicio: formData.dataInicio ? formData.dataInicio.toISOString() : null,
       dataFim: formData.dataFim ? formData.dataFim.toISOString() : null
     }

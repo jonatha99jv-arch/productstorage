@@ -11,6 +11,9 @@ export default defineConfig({
   server: {
     host: true
   },
+  build: {
+    chunkSizeWarningLimit: 1024, // 1 MB; chunk principal ~1 MB após minificação
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

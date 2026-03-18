@@ -196,7 +196,7 @@ export const useSupabaseData = () => {
       }
     }
 
-    // data_fim pode vir como 'YYYY-MM-DD' (string). Construir Date local sem UTC.
+    // data_fim pode vir como 'YYYY-MM-DD' (string) ou das tags. Construir Date local sem UTC.
     let dataFimLocal = null
     if (dbItem.data_fim) {
       if (typeof dbItem.data_fim === 'string') {
@@ -209,6 +209,8 @@ export const useSupabaseData = () => {
         if (!Number.isNaN(d.getTime())) dataFimLocal = d
       }
     }
+    // Fallback: usar dataFim reconstituído das tags se a coluna não existir
+    if (!dataFimLocal && dataFim) dataFimLocal = dataFim
 
     return {
       id: dbItem.id,
@@ -232,8 +234,9 @@ export const useSupabaseData = () => {
   const migrateProductSubProduct = (item) => {
     const { produto, subProduto, nome } = item
     
-    // Debug: mostrar todos os itens sendo processados
-    console.log(`🔍 Processando item "${nome}": produto=${produto}, subProduto=${subProduto}`)
+    if (import.meta.env.DEV) {
+      console.log(`🔍 Processando item "${nome}": produto=${produto}, subProduto=${subProduto}`)
+    }
     
     // Mapeamento de subprodutos para produtos corretos
     const subProductToProductMap = {
@@ -252,7 +255,7 @@ export const useSupabaseData = () => {
       
       // Se o produto atual não é o correto, migrar
       if (produto !== produtoCorreto) {
-        console.log(`🔄 Migrando item "${nome}" de ${produto}/${subProduto} para ${produtoCorreto}/${subProduto}`)
+        if (import.meta.env.DEV) console.log(`🔄 Migrando item "${nome}" de ${produto}/${subProduto} para ${produtoCorreto}/${subProduto}`)
         return {
           ...item,
           produto: produtoCorreto,
@@ -264,7 +267,7 @@ export const useSupabaseData = () => {
     // Casos específicos de migração baseados no produto atual
     // Se o subproduto é 'company' e o produto é 'jornada_profissional', migrar para 'hr_experience'
     if (subProduto === 'company' && produto === 'jornada_profissional') {
-      console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Company para HR Experience/Company`)
+      if (import.meta.env.DEV) console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Company para HR Experience/Company`)
       return {
         ...item,
         produto: 'hr_experience',
@@ -274,7 +277,7 @@ export const useSupabaseData = () => {
     
     // Se o subproduto é 'portal_estrela' e o produto é 'jornada_profissional', migrar para 'aplicativo'
     if (subProduto === 'portal_estrela' && produto === 'jornada_profissional') {
-      console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Portal Estrela para Jornada do Paciente/Portal Estrela`)
+      if (import.meta.env.DEV) console.log(`🔄 Migrando item "${nome}" de Jornada do Profissional/Portal Estrela para Jornada do Paciente/Portal Estrela`)
       return {
         ...item,
         produto: 'aplicativo',
@@ -287,9 +290,10 @@ export const useSupabaseData = () => {
   }
 
   const mapAppToDb = (appItem) => {
-    console.log('🔍 mapAppToDb - appItem recebido:', appItem)
-    console.log('🔍 mapAppToDb - dataFim:', appItem.dataFim, 'tipo:', typeof appItem.dataFim)
-    
+    if (import.meta.env.DEV) {
+      console.log('🔍 mapAppToDb - appItem recebido:', appItem)
+      console.log('🔍 mapAppToDb - dataFim:', appItem.dataFim, 'tipo:', typeof appItem.dataFim)
+    }
     const descricao = JSON.stringify({
       inputOutputMetric: appItem.inputOutputMetric || '',
       teseProduto: appItem.teseProduto || '',
@@ -317,7 +321,7 @@ export const useSupabaseData = () => {
     }
 
     const toLocalDateString = (dateLike) => {
-      console.log('🔍 toLocalDateString - dateLike:', dateLike, 'tipo:', typeof dateLike)
+      if (import.meta.env.DEV) console.log('🔍 toLocalDateString - dateLike:', dateLike, 'tipo:', typeof dateLike)
       if (!dateLike) return null
       const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike
       if (Number.isNaN(d.getTime())) return null
@@ -357,8 +361,7 @@ export const useSupabaseData = () => {
       setError(null)
 
       if (isMockMode()) {
-        // Modo mock para desenvolvimento local
-        console.log('🎭 Usando dados MOCK para desenvolvimento local')
+        if (import.meta.env.DEV) console.log('🎭 Usando dados MOCK para desenvolvimento local')
         
         // Simular delay de rede
         await new Promise(resolve => setTimeout(resolve, 800))
@@ -620,8 +623,7 @@ export const useSupabaseData = () => {
   const saveRoadmapItem = async (itemData) => {
     try {
       if (isMockMode()) {
-        // Modo mock - usar localStorage
-        console.log('💾 Salvando item em modo MOCK:', itemData.nome)
+        if (import.meta.env.DEV) console.log('💾 Salvando item em modo MOCK:', itemData.nome)
         
         // Simular delay de rede
         await new Promise(resolve => setTimeout(resolve, 300))
@@ -702,8 +704,7 @@ export const useSupabaseData = () => {
   const deleteRoadmapItem = async (itemId) => {
     try {
       if (isMockMode()) {
-        // Modo mock - usar localStorage
-        console.log('🗑️ Deletando item em modo MOCK:', itemId)
+        if (import.meta.env.DEV) console.log('🗑️ Deletando item em modo MOCK:', itemId)
         
         const currentItems = JSON.parse(localStorage.getItem('mockRoadmapItems') || '[]')
         const updatedItems = currentItems.filter(item => item.id !== itemId)
@@ -756,8 +757,7 @@ export const useSupabaseData = () => {
   const updateRoadmapItemStatus = async (itemId, newStatus) => {
     try {
       if (isMockMode()) {
-        // Modo mock - usar localStorage
-        console.log('🔄 Atualizando status em modo MOCK:', itemId, newStatus)
+        if (import.meta.env.DEV) console.log('🔄 Atualizando status em modo MOCK:', itemId, newStatus)
         
         const currentItems = JSON.parse(localStorage.getItem('mockRoadmapItems') || '[]')
         const updatedItems = currentItems.map(item =>
@@ -898,8 +898,7 @@ export const useSupabaseData = () => {
   const reorderRoadmapItems = async (reorderedItems) => {
     try {
       if (isMockMode()) {
-        // Modo mock - apenas atualizar localStorage
-        console.log('🔄 Reordenando itens em modo MOCK')
+        if (import.meta.env.DEV) console.log('🔄 Reordenando itens em modo MOCK')
         
         const itemsWithOrder = reorderedItems.map((item, index) => ({
           ...item,

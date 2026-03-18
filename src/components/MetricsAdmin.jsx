@@ -23,7 +23,7 @@ import {
 import { metricsConfig } from '../data/sprintMetricsData'
 import { useSprintMetrics } from '../hooks/useSprintMetrics'
 
-export const MetricsAdmin = ({ user }) => {
+export const MetricsAdmin = () => {
   const [step, setStep] = useState('select-team') // select-team, create-sprint, manage-metrics
   const [selectedTeam, setSelectedTeam] = useState('')
   const [sprintForm, setSprintForm] = useState({

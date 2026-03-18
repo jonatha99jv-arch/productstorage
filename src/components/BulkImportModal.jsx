@@ -198,24 +198,24 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           clone.setFullYear(anoRef)
           return clone
         }
-        const applyYearStart = applyYear(dataInicio)
-        const applyYearEnd = applyYear(dataFim)
-        dataInicio = applyYearStart
-        dataFim = applyYearEnd
-        
+        const dataInicioAdj = applyYear(dataInicio)
+        const dataFimAdj = applyYear(dataFim)
+        let dataInicioFinal = dataInicioAdj
+        let dataFimFinal = dataFimAdj
+
         // Se não tiver "Data Final", tentar calcular a partir de "Duração" (para compatibilidade)
-        if (!dataFim && duracao && dataInicio) {
+        if (!dataFimFinal && duracao && dataInicioFinal) {
           const duracaoStr = String(duracao).trim().replace(',', '.')
           const duracaoNum = Math.ceil(parseFloat(duracaoStr))
           if (Number.isFinite(duracaoNum) && duracaoNum > 0) {
-            const endDate = new Date(dataInicio)
+            const endDate = new Date(dataInicioFinal)
             endDate.setMonth(endDate.getMonth() + duracaoNum)
-            dataFim = endDate
+            dataFimFinal = endDate
           }
         }
 
         // Validar que a data final é posterior à data de início
-        if (dataFim && dataInicio && dataFim <= dataInicio) {
+        if (dataFimFinal && dataInicioFinal && dataFimFinal <= dataInicioFinal) {
           setLogs(prev => [...prev, `Linha ${r + 1}: Data Final deve ser posterior à Data de Início`])
           setErrorCount(c => c + 1)
           continue
@@ -226,8 +226,8 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
           inputOutputMetric: metric,
           teseProduto: tese,
           descricao,
-          dataFim,
-          dataInicio,
+          dataFim: dataFimFinal,
+          dataInicio: dataInicioFinal,
           status: statusMap[statusLabel] || 'nao_iniciado',
           okrId: '',
           produto,

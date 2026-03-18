@@ -117,7 +117,7 @@ export const PerformanceDashboard = ({ user }) => {
     return `${sign}${comparison.percentageChange.toFixed(1)}%`
   }
 
-  const MetricCard = ({ teamId, metricKey, sprintData, comparison }) => {
+  const MetricCard = ({ metricKey, sprintData, comparison }) => {
     const config = metricsConfig[metricKey]
     const Icon = getMetricIcon(metricKey)
     const TrendIcon = getTrendIcon(comparison)
@@ -266,7 +266,6 @@ export const PerformanceDashboard = ({ user }) => {
           {Object.keys(metricsConfig).map(metricKey => (
             <MetricCard
               key={metricKey}
-              teamId={teamId}
               metricKey={metricKey}
               sprintData={currentSprintData}
               comparison={comparison?.metrics[metricKey]}

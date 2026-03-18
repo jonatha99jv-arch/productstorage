@@ -63,6 +63,10 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const [errors, setErrors] = useState({})
 
   // Refs para focar/rolar até o primeiro campo inválido
+  const nomeRef = useRef(null)
+  const produtoRef = useRef(null)
+  const metricRef = useRef(null)
+  const teseRef = useRef(null)
   const dataInicioBtnRef = useRef(null)
   const dataFimBtnRef = useRef(null)
 
@@ -205,6 +209,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           <div className="space-y-1.5">
             <Label htmlFor="nome">Novo Item *</Label>
             <Input
+              ref={nomeRef}
               id="nome"
               value={formData.nome}
               onChange={(e) => handleInputChange('nome', e.target.value)}
@@ -218,7 +223,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           {/* Produto */}
           <div className="space-y-1.5">
             <Label htmlFor="produto">Produto *</Label>
-            <div className="relative">
+            <div className="relative" ref={produtoRef}>
               <select
                 id="produto"
                 value={formData.produto}
@@ -272,6 +277,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           <div className="space-y-1.5">
             <Label htmlFor="metric">Métrica Input/Output *</Label>
             <Textarea
+              ref={metricRef}
               id="metric"
               value={formData.inputOutputMetric}
               onChange={(e) => handleInputChange('inputOutputMetric', e.target.value)}
@@ -289,6 +295,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
               Tese de Produto *
             </Label>
             <Textarea
+              ref={teseRef}
               id="tese"
               value={formData.teseProduto}
               onChange={(e) => handleInputChange('teseProduto', e.target.value)}

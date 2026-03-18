@@ -99,11 +99,6 @@ const OKRManager = ({ okrs, roadmapItems, onSaveOKR, onDeleteOKR, onClose, asPag
     setEditingOKR(null)
   }
 
-  // Contar itens vinculados a cada OKR
-  const getLinkedItemsCount = (okrId) => {
-    return roadmapItems.filter(item => item.okrId === okrId).length
-  }
-
   const getLinkedItems = (okrId) => {
     return roadmapItems.filter(item => item.okrId === okrId)
   }

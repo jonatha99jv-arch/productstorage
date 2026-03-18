@@ -249,7 +249,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     }
   }
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = () => {
     dragCounter.current--
     if (dragCounter.current === 0) {
       setDragOverItemId(null)
@@ -405,13 +405,6 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     }
     
     return `${formatDate(startDate)} - ${formatDate(endDate)}`
-  }
-
-  const getEndDate = (item) => {
-    if (!item?.dataInicio || !item?.dataFim) return null
-    const startDate = new Date(item.dataInicio)
-    const endDate = new Date(item.dataFim)
-    return endDate
   }
 
   const formatFullDate = (dateLike) => {
@@ -725,7 +718,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                                       onValueChange={(newStatus) => {
                                         // Atualizar status do subitem
                                         const updatedSubitens = [...item.subitens]
-                                        const originalIndex = item.subitens.findIndex((sub, i) => {
+                                        const originalIndex = item.subitens.findIndex((sub) => {
                                           const subObj = typeof sub === 'string' ? { texto: sub, status: 'nao_iniciado' } : sub
                                           return subObj.texto === subitemObj.texto && subObj.status === subitemObj.status
                                         })

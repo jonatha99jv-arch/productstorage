@@ -17,7 +17,7 @@ const DatabaseSetup = ({ onSetupComplete }) => {
       // Verificar se as tabelas já existem
       setSetupStatus('Verificando estrutura do banco de dados...')
       
-      const { data: tables, error: tablesError } = await supabase
+      const { data: _tables, error: tablesError } = await supabase
         .from('information_schema.tables')
         .select('table_name')
         .eq('table_schema', 'public')

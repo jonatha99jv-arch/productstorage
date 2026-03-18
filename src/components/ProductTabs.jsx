@@ -1,4 +1,3 @@
-import { useState } from 'react'
 
 const PRODUCTS = [
   { id: 'aplicativo', label: 'Jornada do Paciente' },

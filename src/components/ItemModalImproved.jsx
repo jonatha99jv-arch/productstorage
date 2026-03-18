@@ -42,10 +42,11 @@ const HR_EXPERIENCE_SUB_PRODUCTS = [
 ]
 
 const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
+  const newSubitemKey = () => `sub-${Date.now()}-${Math.random().toString(36).slice(2)}`
   const [formData, setFormData] = useState({
     id: null,
     nome: '',
-    subitens: [{ texto: '', status: 'nao_iniciado' }],
+    subitens: [{ texto: '', status: 'nao_iniciado', _key: newSubitemKey() }],
     inputOutputMetric: '',
     teseProduto: '',
     resultadoObtido: '',
@@ -74,13 +75,13 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
     if (item) {
       // Converter subitens antigos (strings) para nova estrutura (objetos com status)
       const subitensFormatados = item.subitens && item.subitens.length > 0 
-        ? item.subitens.map(subitem => {
-            if (typeof subitem === 'string') {
-              return { texto: subitem, status: 'nao_iniciado' }
-            }
-            return subitem
+        ? item.subitens.map((subitem, i) => {
+            const base = typeof subitem === 'string'
+              ? { texto: subitem, status: 'nao_iniciado' }
+              : subitem
+            return { ...base, _key: base._key || `sub-${i}-${String(base.texto || '').slice(0, 30)}` }
           })
-        : [{ texto: '', status: 'nao_iniciado' }]
+        : [{ texto: '', status: 'nao_iniciado', _key: newSubitemKey() }]
 
       setFormData({
         id: item.id || null,
@@ -121,7 +122,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
   const addSubitem = () => {
     setFormData(prev => ({
       ...prev,
-      subitens: [...prev.subitens, { texto: '', status: 'nao_iniciado' }]
+      subitens: [...prev.subitens, { texto: '', status: 'nao_iniciado', _key: newSubitemKey() }]
     }))
   }
 
@@ -179,7 +180,9 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
 
     const dataToSave = {
       ...formData,
-      subitens: formData.subitens.filter(subitem => subitem.texto.trim() !== ''),
+      subitens: formData.subitens
+        .filter(subitem => subitem.texto.trim() !== '')
+        .map(({ _key, ...rest }) => rest),
       dataInicio: formData.dataInicio ? formData.dataInicio.toISOString() : null,
       dataFim: formData.dataFim ? formData.dataFim.toISOString() : null
     }
@@ -339,7 +342,7 @@ const ItemModalImproved = ({ item, okrs, onSave, onClose }) => {
           <div className="space-y-1.5">
             <Label>Subitens</Label>
             {formData.subitens.map((subitem, index) => (
-              <div key={index} className="flex items-center space-x-2 mt-2">
+              <div key={subitem._key || `sub-${index}`} className="flex items-center space-x-2 mt-2">
                 <Input
                   value={subitem.texto}
                   onChange={(e) => handleSubitemChange(index, 'texto', e.target.value)}

@@ -687,7 +687,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                         </div>
                       )}
                       {expandedItems[item.id] && Array.isArray(item.subitens) && item.subitens.length > 0 && (
-                        <div className="mt-2">
+                        <div key={`expanded-${item.id}`} className="mt-2">
                           <div className="text-[10px] text-gray-500 mb-1">Subitens</div>
                           <div className="space-y-1">
                             {item.subitens
@@ -706,9 +706,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                               })
                               .map((subitemObj, idx) => {
                                 const statusConfig = STATUS_CONFIG[subitemObj.status] || STATUS_CONFIG['nao_iniciado']
-                                
+                                const subKey = `${item.id}-sub-${idx}-${String(subitemObj.texto || '').slice(0, 40)}`
                                 return (
-                                  <div key={idx} className={`flex items-center bg-gray-50 px-2 py-1 rounded text-xs border-l-4 gap-2 subitem-${subitemObj.status}`}>
+                                  <div key={subKey} className={`flex items-center bg-gray-50 px-2 py-1 rounded text-xs border-l-4 gap-2 subitem-${subitemObj.status}`}>
                                     <span className="text-gray-700 flex-1 min-w-0">{subitemObj.texto}</span>
                                     <div className="w-20 h-5 text-xs flex items-center space-x-1 flex-shrink-0">
                                       <span className="text-xs whitespace-nowrap">{statusConfig.label}</span>
@@ -971,8 +971,9 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
                          return priorityA - priorityB
                        })
                        .map((subitemObj, i) => {
+                         const subKey = `preview-sub-${i}-${String(subitemObj.texto || '').slice(0, 40)}`
                          return (
-                           <div key={i} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border-l-4 gap-3" style={{ borderLeftColor: getStatusColor(subitemObj.status) }}>
+                           <div key={subKey} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border-l-4 gap-3" style={{ borderLeftColor: getStatusColor(subitemObj.status) }}>
                              <span className="text-gray-700 flex-1 min-w-0 text-sm">{subitemObj.texto}</span>
                              <div className="w-24 h-6 flex items-center space-x-2 flex-shrink-0">
                                <div className={`w-3 h-3 rounded-full ${STATUS_CONFIG[subitemObj.status]?.className.replace('status-', 'bg-')}`}></div>

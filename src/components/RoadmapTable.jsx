@@ -108,14 +108,13 @@ const RoadmapTable = ({ items, okrs, onEditItem, onDeleteItem, onUpdateItemStatu
       console.warn('Não foi possível carregar filtros salvos da tabela simples', e)
       setFiltersLoaded(true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (!filtersLoaded) return
     try {
       localStorage.setItem('roadmapTableFilters', JSON.stringify({ quarter: selectedQuarter }))
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, [filtersLoaded, selectedQuarter])

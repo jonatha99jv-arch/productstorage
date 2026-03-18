@@ -126,7 +126,6 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
       console.warn('Não foi possível carregar filtros salvos', e)
       setFiltersLoaded(true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -138,7 +137,7 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
         statusFilter
       }
       localStorage.setItem('roadmapFilters', JSON.stringify(payload))
-    } catch (e) {
+    } catch {
       // ignora erros de storage
     }
   }, [filtersLoaded, selectedQuarter, selectedYear, statusFilter])
@@ -186,19 +185,17 @@ const RoadmapTableImproved = ({ items, okrs, onEditItem, onDeleteItem, onUpdateI
     return quarterMonths.some(month => isItemActiveInMonth(item, month, year))
   }
 
-  // Função de ordenação por prioridade de status, data de início e data de finalização
+  // Função de ordenação: ordem manual (quando existir) > prioridade de status > datas
   const sortItems = (itemsToSort) => {
     return [...itemsToSort].sort((a, b) => {
-      // Se modo de ordenação manual está ativo, usar manualOrder
-      if (manualOrderMode) {
-        const orderA = a.manualOrder || 0
-        const orderB = b.manualOrder || 0
-        if (orderA !== orderB) {
-          return orderA - orderB
-        }
+      // Sempre respeitar ordem manual quando houver (assim ao desmarcar "Reordenar" a lista mantém a ordem salva)
+      const orderA = a.manualOrder || 0
+      const orderB = b.manualOrder || 0
+      if (orderA !== orderB) {
+        return orderA - orderB
       }
-      
-      // Primeiro critério: prioridade do status
+
+      // Segundo critério: prioridade do status
       const statusPriorityA = STATUS_CONFIG[a.status]?.priority || 999
       const statusPriorityB = STATUS_CONFIG[b.status]?.priority || 999
       

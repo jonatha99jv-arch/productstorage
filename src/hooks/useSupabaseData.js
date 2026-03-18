@@ -146,7 +146,7 @@ export const useSupabaseData = () => {
         descricao = ''
         resultadoObtido = ''
       }
-    } catch (_) {
+    } catch {
       // Ignorar parse errors e manter descricao antiga como teseProduto
       teseProduto = dbItem.descricao || ''
       descricao = ''
@@ -172,7 +172,7 @@ export const useSupabaseData = () => {
         try {
           const subitemData = JSON.parse(tag.substring(8)) // Remove 'subitem:' prefix
           subitens.push(subitemData)
-        } catch (_) {
+        } catch {
           // Fallback: tratar como subitem antigo
           subitens.push(tag)
         }

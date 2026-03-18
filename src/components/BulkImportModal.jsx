@@ -237,7 +237,6 @@ const BulkImportModal = ({ onImport, onUpsert }) => {
 
         try {
           // Preferir upsert se fornecido para evitar duplicações
-          /* eslint-disable no-await-in-loop */
           if (onUpsert) {
             await onUpsert(payload)
           } else {

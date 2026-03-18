@@ -135,7 +135,7 @@ export async function ensureDefaultAdmin() {
       const hash = await bcrypt.hash('Teste123', 10)
       await supabase.from('users').insert([{ nome: 'Jonatha Vieira', email, password_hash: hash, role: 'admin' }])
     }
-  } catch (_) {
+  } catch {
     // silencioso
   }
 }
